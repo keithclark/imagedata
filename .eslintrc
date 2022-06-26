@@ -1,0 +1,24 @@
+{
+  "extends": "eslint:recommended",
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "rules": {
+    "semi": "warn",
+    "object-curly-spacing": ["warn", "always"],
+    "quotes": ["warn", "single"],
+    "indent": ["warn", 2],
+    "curly": ["error", "all"],
+    "object-curly-newline": ["warn", {
+      "ObjectExpression": {"multiline": true, "minProperties": 4, "consistent": true},
+      "ObjectPattern": {"multiline": true, "minProperties": 4, "consistent": true}
+    }],
+    "space-infix-ops": ["warn", { "int32Hint": false }],
+    "comma-spacing": ["warn", {"before": false, "after": true}]
+  }
+}
