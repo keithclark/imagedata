@@ -113,7 +113,7 @@ export class ImageDataDrawingContext {
    * @param {Number} height The rectangle's height. Positive values are down, and negative are up.
    */
   clearRect(x, y, width, height) {
-    drawFilledRect(this.#pixelView, x, y, width, height, 0x00000000);
+    drawFilledRect(this.#pixelView, x, y, width, height, 0x00000000, true);
   }
 
   /**
