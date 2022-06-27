@@ -56,7 +56,7 @@ export const drawFilledRect = (pixelView, x, y, width, height, color = 0xfffffff
 
   for (let col = startCol; col < endCol; col++) {
     for (let row = startRow; row < endRow; row++) {
-      pixelView.setColor(col, row, color);
+      pixelView.blendColor(col, row, color);
     }
   }
 };

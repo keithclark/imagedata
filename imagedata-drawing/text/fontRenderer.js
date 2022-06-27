@@ -30,7 +30,7 @@ export const drawText = (pixelView, text, x, y, color = 0xfffffff, font) => {
     for (let row = 0; row < height; row++) {
       for (let col = 0; col < width; col++) {
         if (data[row] >> (width - col - 1) & 1) {
-          pixelView.setColor(x + col, y + row - font.baseHeight + vOffset, color);
+          pixelView.blendColor(x + col, y + row - font.baseHeight + vOffset, color);
         }
       }
     }
