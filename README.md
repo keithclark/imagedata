@@ -1,6 +1,6 @@
 # `ImageData`
 
-A collection of packages for working with images in JavaScript enivronments that don't implement the `ImageData` interface.
+A collection of packages for working with images in JavaScript environments that don't implement the `ImageData` interface.
 
 ## Example
 
@@ -35,5 +35,9 @@ await writeFile(destFilepath, Buffer.from(outBuffer));
 * `imagedata-coder-iff` - Decode Amiga [IFF](https://en.wikipedia.org/wiki/Interchange_File_Format) images.
 * `imagedata-coder-neochrome` - Encode / decode Atari ST [NEOchrome](https://en.wikipedia.org/wiki/NEOchrome) images
 * `imagedata-coder-png` - Ecode / decode [PNG](https://en.wikipedia.org/wiki/Portable_Network_Graphics) images. Uses [pngjs](https://github.com/lukeapage/pngjs).
+<<<<<<< HEAD
 * `imagedata-coder-spectrum512` - Decode Atari ST [Spectrum 512](http://www.atarimania.com/utility-atari-st-spectrum-512_22312.html) images
 
+=======
+* `imagedata-drawing` - Provides a context, similar to `CanvasRendingContext2D` for drawing graphics to `ImageData` objects
+>>>>>>> 2f3180d (Initial work on drawing context)
