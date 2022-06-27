@@ -22,7 +22,7 @@ export const line = (pixelView, x0, y0, x1, y1, color = 0xffffffff) => {
   // eslint-disable-next-line no-constant-condition
   while (true) {
 
-    pixelView.setColor(x0, y0, color);
+    pixelView.blendColor(x0, y0, color);
 
     if (x0 === x1 && y0 === y1) {
       break;
