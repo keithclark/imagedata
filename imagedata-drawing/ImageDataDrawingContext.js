@@ -1,6 +1,6 @@
 import { drawText, getTextMetrics } from './text/fontRenderer.js';
 import { drawStrokedRect, drawFilledRect } from './shapes/rect.js';
-import { drawStrokedPath } from './shapes/path.js';
+import { drawStrokedPath, drawFilledPath } from './shapes/path.js';
 import { getFontByFamily, getDefaultFont } from './text/fontRegistry.js';
 import { parseColor } from './lib/cssValueParsers.js';
 import PixelView from './interfaces/PixelView.js';
@@ -18,6 +18,9 @@ export class ImageDataDrawingContext {
   #pixelView;
   #path;
 
+  /**
+   * @param {ImageData} imageData The `ImageData` object to draw to
+   */
   constructor(imageData) {
     this.#pixelView = new PixelView(imageData);
     this.#path = new Path();
@@ -72,25 +75,56 @@ export class ImageDataDrawingContext {
     }
   }
 
+  /**
+   * Begins a new sub-path
+   */
   beginPath() {
     this.#path = new Path();
   }
 
+  /**
+   * Connects the last point in the current sub-path to the first point. If the 
+   * last and first points are the same coordinates, this method does nothing.
+   */
   closePath() {
     this.#path.close();
   }
 
+  /**
+   * Begins a new-sub path at the given coordinates
+   * 
+   * @param {Number} x - The x-axis coordinate of the new point
+   * @param {Number} y - The y-axis coordinate of the new point
+   */
   moveTo(x, y) {
     this.#path.begin(x, y);
   }
 
+  /**
+   * Draws a line from the last sub-path point to a new sub-path point at the  
+   * given coordinates
+   * 
+   * @param {Number} x - The x-axis coordinate of the new point
+   * @param {Number} y - The y-axis coordinate of the new point
+   */
   lineTo(x, y) {
     this.#path.addPoint(x, y);
   }
 
+  /**
+   * Outlines the current path with the current stroke style
+   */
   stroke() {
     drawStrokedPath(this.#pixelView, this.#path, this.#strokeColor);
   }
+
+  /**
+   * Fills the current path with the current fill style
+   */
+  fill() {
+    drawFilledPath(this.#pixelView, this.#path, this.#fillColor);
+  }
+
 
   /**
    * Draws an outlined rectangle using the current `strokeStyle`. 

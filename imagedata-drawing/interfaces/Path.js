@@ -1,29 +1,24 @@
+import Point from './Point.js';
+import Subpath from './Subpath.js';
+
 export default class Path {
 
-  #x = 0;
-  #y = 0;
+  /** @type {Array<Subpath> } */
   subPaths = [];
-
-  get x() {
-    return this.#x;
-  }
-
-  get y() {
-    return this.#y;
-  }
 
   begin(x = 0, y = 0) {
     this.currentSubPath = new Subpath(x, y);
     this.subPaths.push(this.currentSubPath);
-    this.#x = x;
-    this.#y = y;
   }
 
-  close() {
-    if (this.currentSubPath.points.length > 2) {
-      const [sx, sy] = this.currentSubPath.points;
-      this.addPoint(sx, sy);
-      this.begin(sx, sy);
+  close() { 
+    const { points } = this.currentSubPath;
+    if (points.length > 1) {
+      const { x: ex, y: ey } = points[points.length - 1];
+      const { x: sx, y: sy } = points[0];
+      if (ex !== sx || ey !== sy) {
+        this.addPoint(sx, sy);
+      }
     }
   }
 
@@ -31,16 +26,7 @@ export default class Path {
     if (!this.currentSubPath) {
       this.begin();
     }
-    this.currentSubPath.points.push(x, y);
-    this.#x = x;
-    this.#y = y;
+    this.currentSubPath.points.push(new Point(x, y));
   }
 
-}
-
-
-class Subpath {
-  constructor(x, y) {
-    this.points = [x, y];
-  }
 }
