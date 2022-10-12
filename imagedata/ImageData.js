@@ -6,6 +6,10 @@
  */
 export default class ImageData {
 
+  #width;
+  #height;
+  #data;
+
   constructor(...args) {
 
     let arg, data, width, height;
@@ -16,7 +20,7 @@ export default class ImageData {
   
     arg = args.shift();
     if (arg instanceof Uint8ClampedArray) {
-      data = arg;
+      data = arg.slice();
       arg = args.shift();
     } else if (!Number.isInteger(arg)) {
       throw new TypeError('Argument 0 must be an Integer or Uint8ClampedArray');     
@@ -61,9 +65,9 @@ export default class ImageData {
       data = new Uint8ClampedArray(width * height * 4);
     }
 
-    this._height = height;
-    this._width = width;
-    this._data = data;
+    this.#height = height;
+    this.#width = width;
+    this.#data = data;
   }
 
 
@@ -73,7 +77,7 @@ export default class ImageData {
    * @see https://developer.mozilla.org/en-US/docs/Web/API/ImageData/width
    */
   get width() {
-    return this._width;
+    return this.#width;
   }
 
 
@@ -83,7 +87,7 @@ export default class ImageData {
    * @see https://developer.mozilla.org/en-US/docs/Web/API/ImageData/height
    */
   get height() {
-    return this._height;
+    return this.#height;
   }
 
 
@@ -93,7 +97,7 @@ export default class ImageData {
    * @see https://developer.mozilla.org/en-US/docs/Web/API/ImageData/data
    */
   get data() {
-    return this._data;
+    return this.#data;
   }
 
 
