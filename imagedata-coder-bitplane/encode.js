@@ -49,11 +49,7 @@ export const encode = (imageData, palette, options = {}) => new Promise(resolve 
     planes = Math.ceil(Math.log(colors.length) / Math.log(2));
   }
 
-  // Ensure the palette will fit in the number of planes
-  if (colors.length - 1 > planes ** 2) {
-    throw new RangeError(`Too many colors (${colors.length}) for a ${planes} plane image`);
-  }
-
+  const maxColors = (1 << planes) - 1;
   const lineLength = imageData.width >> 4;
   const planeLength = lineLength * imageData.height;
   const buffer = new ArrayBuffer(planeLength * planes * 2, 0);
@@ -64,8 +60,11 @@ export const encode = (imageData, palette, options = {}) => new Promise(resolve 
   for (let i = 0; i < imageData.data.length / 4; i++) {
     const color = colorView.getUint32(i * 4);
     const index = colors.indexOf(color);
+    if (index > maxColors) {
+      throw new RangeError(`Color index ${index} is out of range. Maximum color index for a ${planes} bitplane image is ${maxColors}.`);
+    }
     if (index === -1) {
-      throw new RangeError(`color 0x${color.toString(16).padStart(8, '0')} does not exist in the palette`);
+      throw new RangeError(`Color 0x${color.toString(16).padStart(8, '0')} does not exist in the palette`);
     }
     const wordOffset = i >> 4;
     const bitOffset = i & 15;
