@@ -9,11 +9,11 @@
  * @returns {Number} The color
  */
 export const hslaToUint32 = (h, s, l, a) => {
-  h*=180/Math.PI
+  h *= 180 / Math.PI;
   const k = n => (n + h / 30) % 12;
   const z = s * Math.min(l, 1 - l);
   const f = n => l - z * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  return (255*f(0) << 24) + (255*f(8) << 16) + (255*f(4) << 8) + (255*a) >>> 0;
+  return (255 * f(0) << 24) + (255 * f(8) << 16) + (255 * f(4) << 8) + (255 * a) >>> 0;
 };
 
 

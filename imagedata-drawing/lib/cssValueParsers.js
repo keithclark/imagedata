@@ -38,7 +38,6 @@ export const parseClampedNumber = (value, min = 0, max = 1) => {
  */
 export const parsePercentage = (value) => {
   return parseClampedNumber(value, 0, 100) / 100;
-  return Math.max(0, Math.min(parseFloat(value.slice(0, -1)), 100)) / 100;
 };
 
 
@@ -73,7 +72,7 @@ export const parseAngle = (value) => {
  * @example parseNumberOrPercentage('50%', 0, 250); // returns `125`
  * @example parseNumberOrPercentage('50', 0, 255); // returns `50`
  */
-export const parseNumberOrPercentage = (value, min=0, max=1) => {
+export const parseNumberOrPercentage = (value, min = 0, max = 1) => {
   if (value.endsWith('%')) {
     return max * parsePercentage(value);
   } else {
