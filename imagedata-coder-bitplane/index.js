@@ -1,5 +1,5 @@
 export { encode } from './encode.js';
-export { decode } from './decode.js';
+export { decode, decodeWordsToPaletteIndexes, decodeBytesToPaletteIndexes } from './decode.js';
 export { IndexedPalette } from './IndexedPalette.js';
 export { 
   ENCODING_FORMAT_CONTIGUOUS,
