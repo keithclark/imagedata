@@ -31,7 +31,7 @@ export const drawStrokedRect = (pixelView, x, y, width, height, color = 0xffffff
  * @param {Number} width - The rectangle's width. Positive values are to the right, and negative to the left.
  * @param {Number} height - The rectangle's height. Positive values are down, and negative are up.
  * @param {Number} color - The color to fill the rectangle with
- * @param {Number} noBlending - Controls if the rectangle fill blend with other pixels or not.
+ * @param {Number} noBlending - Determines if the rectangle fill will blend with other pixels or not.
  */
 export const drawFilledRect = (pixelView, x, y, width, height, color = 0xffffffff, noBlending = false) => {
   const { width: imageDataWidth, height: imageDataHeight } = pixelView.imageData;
@@ -57,7 +57,7 @@ export const drawFilledRect = (pixelView, x, y, width, height, color = 0xfffffff
     return;
   }
 
-  if (noBlending) {
+  if (noBlending || (color & 0xff) === 0xff) {
     drawMethod = pixelView.setColor.bind(pixelView);
   } else {
     drawMethod = pixelView.blendColor.bind(pixelView);
