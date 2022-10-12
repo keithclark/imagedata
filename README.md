@@ -16,7 +16,7 @@ import { readFile, writeFile } from 'fs/promises';
 const srcImage = await readFile('my-image.neo');
 
 // Decode NEO file into ImageData and return its indexed palette
-const { imageData } = await decode(srcImage.buffer);
+const { imageData, palette } = await decode(srcImage.buffer);
 
 // Encode the ImageData to PNG format
 const outBuffer = await encode(imageData);
@@ -30,7 +30,10 @@ await writeFile(destFilepath, Buffer.from(outBuffer));
 * `imagedata` - Implementation of the [`ImageData` interface](https://html.spec.whatwg.org/multipage/canvas.html#dom-imagedata-dev)
 * `imagedata-coder-bitplane` - Convert from/to bitplane format
 * `imagedata-coder-blit` - Copy pixels between `ImageData`.
+* `imagedata-coder-crackart` - Decode Atari ST Crack Art images
 * `imagedata-coder-degas` - Encode / decode Atari ST [Degas](https://en.wikipedia.org/wiki/DEGAS_(software)) images
 * `imagedata-coder-iff` - Decode Amiga [IFF](https://en.wikipedia.org/wiki/Interchange_File_Format) images.
 * `imagedata-coder-neochrome` - Encode / decode Atari ST [NEOchrome](https://en.wikipedia.org/wiki/NEOchrome) images
 * `imagedata-coder-png` - Ecode / decode [PNG](https://en.wikipedia.org/wiki/Portable_Network_Graphics) images. Uses [pngjs](https://github.com/lukeapage/pngjs).
+* `imagedata-coder-spectrum512` - Decode Atari ST [Spectrum 512](http://www.atarimania.com/utility-atari-st-spectrum-512_22312.html) images
+
