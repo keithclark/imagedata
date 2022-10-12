@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "imagedata-bitplane-coder": "file:../imagedata-coder-bitplane"
+    "imagedata-coder-bitplane": "file:../imagedata-coder-bitplane"
   },
   "author": {
     "name": "Keith Clark",
