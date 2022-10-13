@@ -765,7 +765,7 @@ export default {
     },
     'U': {
       vOffset: -2,
-      width: 4,
+      width: 5,
       data: [
         0b10001,
         0b10001,
