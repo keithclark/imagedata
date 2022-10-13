@@ -1,32 +1,45 @@
-import Point from './Point.js';
-import Subpath from './Subpath.js';
+import Rect from './Rect.js';
 
 export default class Path {
 
-  /** @type {Array<Subpath> } */
-  subPaths = [];
+  points = [];
 
-  begin(x = 0, y = 0) {
-    this.currentSubPath = new Subpath(x, y);
-    this.subPaths.push(this.currentSubPath);
+  addPoint(point) {
+    this.points.push(point);
   }
 
-  close() { 
-    const { points } = this.currentSubPath;
-    if (points.length > 1) {
-      const { x: ex, y: ey } = points[points.length - 1];
-      const { x: sx, y: sy } = points[0];
-      if (ex !== sx || ey !== sy) {
-        this.addPoint(sx, sy);
-      }
-    }
+  get lastPoint() {
+    return this.points[this.points.length - 1];
   }
 
-  addPoint(x, y) {
-    if (!this.currentSubPath) {
-      this.begin();
+  get firstPoint() {
+    return this.points[0];
+  }
+
+  /**
+   * Returns a `Rect` representing a bounding box that contains all the points 
+   * in the path. If the path has less than two points then `null` is returned.
+   * 
+   * @returns {Rect?} A `Rect` object representing the bounding box of the path
+   */
+  getBoundingRect() {
+    if (this.points.length < 2) {
+      return null;
     }
-    this.currentSubPath.points.push(new Point(x, y));
+
+    let x1 = Number.MAX_VALUE;
+    let y1 = Number.MAX_VALUE;
+    let x2 = Number.MIN_VALUE;
+    let y2 = Number.MIN_VALUE;
+
+    this.points.forEach(point => {
+      x1 = Math.min(point.x, x1);
+      x2 = Math.max(point.x, x2);
+      y1 = Math.min(point.y, y1);
+      y2 = Math.max(point.y, y2);
+    });
+
+    return new Rect(x1, y1, x2 - y1, y2 - y1);
   }
 
 }

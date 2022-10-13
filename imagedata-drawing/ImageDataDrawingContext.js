@@ -1,30 +1,28 @@
-import { drawText, getTextMetrics } from './text/fontRenderer.js';
-import { drawStrokedRect, drawFilledRect } from './shapes/rect.js';
-import { drawStrokedPath, drawFilledPath } from './shapes/path.js';
 import { getFontByFamily, getDefaultFont } from './text/fontRegistry.js';
 import { parseColor } from './lib/cssValueParsers.js';
-import PixelView from './interfaces/PixelView.js';
-import Path from './interfaces/Path.js';
+import CanvasPath from './interfaces/CanvasPath.js';
+import Rasterizer from './interfaces/Rasterizer.js';
+import TextStyle from './interfaces/TextStyle.js';
 
 /**
  * @typedef {import('./interfaces/TextMetrics.js').default} TextMetrics
  */
 
 export class ImageDataDrawingContext {
-
+  #rasterizer;
   #strokeColor = 0x000000ff;
   #fillColor = 0x000000ff;
-  #font;
-  #pixelView;
-  #path;
+  #textStyle;
+  #currentPath;
 
   /**
    * @param {ImageData} imageData The `ImageData` object to draw to
    */
   constructor(imageData) {
-    this.#pixelView = new PixelView(imageData);
-    this.#path = new Path();
-    this.#font = getDefaultFont();
+    this.#rasterizer = new Rasterizer(imageData);
+    this.#currentPath = new CanvasPath();
+    this.#textStyle = new TextStyle();
+    this.#textStyle.font = getDefaultFont();
   }
 
   /**
@@ -33,13 +31,13 @@ export class ImageDataDrawingContext {
    * @type {String} The font family
    */
   get font() {
-    return this.#font?.name || null;
+    return this.#textStyle.font?.name || null;
   }
 
   set font(value) {
     const font = getFontByFamily(value);
     if (font !== null) {
-      this.#font = font;
+      this.#textStyle.font = font;
     }
   }
 
@@ -76,10 +74,36 @@ export class ImageDataDrawingContext {
   }
 
   /**
+   * Get or set the spacing between letters when rendering text.
+   * 
+   * @type {String} The spacing value including unit
+   */
+  get letterSpacing() {
+    return this.#textStyle.letterSpacing;
+  }
+  
+  set letterSpacing(value) {
+    this.#textStyle.letterSpacing = parseFloat(value) | 0;
+  }
+
+  /**
+   * Get or set the spacing between words when rendering text.
+   * 
+   * @type {String} The spacing value including unit
+   */
+  get wordSpacing() {
+    return this.#textStyle.wordSpacing;
+  }
+  
+  set wordSpacing(value) {
+    this.#textStyle.wordSpacing = parseFloat(value) | 0;
+  }
+
+  /**
    * Begins a new sub-path
    */
   beginPath() {
-    this.#path = new Path();
+    this.#currentPath = new CanvasPath();
   }
 
   /**
@@ -87,7 +111,7 @@ export class ImageDataDrawingContext {
    * last and first points are the same coordinates, this method does nothing.
    */
   closePath() {
-    this.#path.close();
+    this.#currentPath.close();
   }
 
   /**
@@ -97,7 +121,7 @@ export class ImageDataDrawingContext {
    * @param {Number} y - The y-axis coordinate of the new point
    */
   moveTo(x, y) {
-    this.#path.begin(x, y);
+    this.#currentPath.moveTo(x, y);
   }
 
   /**
@@ -108,23 +132,22 @@ export class ImageDataDrawingContext {
    * @param {Number} y - The y-axis coordinate of the new point
    */
   lineTo(x, y) {
-    this.#path.addPoint(x, y);
+    this.#currentPath.lineTo(x, y);
   }
 
   /**
    * Outlines the current path with the current stroke style
    */
   stroke() {
-    drawStrokedPath(this.#pixelView, this.#path, this.#strokeColor);
+    this.#rasterizer.drawStrokedPath(this.#currentPath, this.#strokeColor);
   }
 
   /**
    * Fills the current path with the current fill style
    */
   fill() {
-    drawFilledPath(this.#pixelView, this.#path, this.#fillColor);
+    this.#rasterizer.drawFilledPath(this.#currentPath, this.#fillColor);
   }
-
 
   /**
    * Draws an outlined rectangle using the current `strokeStyle`. 
@@ -135,19 +158,9 @@ export class ImageDataDrawingContext {
    * @param {Number} height The rectangle's height. Positive values are down, and negative are up.
    */
   strokeRect(x, y, width, height) {
-    drawStrokedRect(this.#pixelView, x, y, width, height, this.#strokeColor);
-  }
-
-  /**
-   * Fills a rectangular area of the image with transparent pixels.
-   * 
-   * @param {Number} x The x-axis coordinate of the rectangle's starting point.
-   * @param {Number} y The y-axis coordinate of the rectangle's starting point.
-   * @param {Number} width  The rectangle's width. Positive values are to the right, and negative to the left.
-   * @param {Number} height The rectangle's height. Positive values are down, and negative are up.
-   */
-  clearRect(x, y, width, height) {
-    drawFilledRect(this.#pixelView, x, y, width, height, 0x00000000, true);
+    const rectPath = new CanvasPath();
+    rectPath.rect(x, y, width, height);
+    this.#rasterizer.drawStrokedPath(rectPath, this.#strokeColor);
   }
 
   /**
@@ -159,7 +172,21 @@ export class ImageDataDrawingContext {
    * @param {Number} height The rectangle's height. Positive values are down, and negative are up.
    */
   fillRect(x, y, width, height) {
-    drawFilledRect(this.#pixelView, x, y, width, height, this.#fillColor);
+    const rectPath = new CanvasPath();
+    rectPath.rect(x, y, width, height);
+    this.#rasterizer.drawFilledPath(rectPath, this.#fillColor);
+  }
+
+  /**
+   * Fills a rectangular area of the image with transparent pixels.
+   * 
+   * @param {Number} x The x-axis coordinate of the rectangle's starting point.
+   * @param {Number} y The y-axis coordinate of the rectangle's starting point.
+   * @param {Number} width  The rectangle's width. Positive values are to the right, and negative to the left.
+   * @param {Number} height The rectangle's height. Positive values are down, and negative are up.
+   */
+  clearRect(x, y, width, height) {
+    this.#rasterizer.clear(x, y, width, height);
   }
 
   /**
@@ -172,7 +199,7 @@ export class ImageDataDrawingContext {
    * @param {Number} y The y-axis coordinate to start drawing the text.
    */
   fillText(text, x, y) {
-    drawText(this.#pixelView, text, x, y, this.#fillColor, this.#font);
+    this.#rasterizer.drawFilledText(text, x, y, this.#fillColor, this.#textStyle);
   }
 
   /**
@@ -185,7 +212,7 @@ export class ImageDataDrawingContext {
    * @param {Number} y The y-axis coordinate to start drawing the text.
    */
   strokeText(text, x, y) {
-    drawText(this.#pixelView, text, x, y, this.#strokeColor, this.#font);
+    this.#rasterizer.drawStrokedText(text, x, y, this.#strokeColor, this.#textStyle);
   }
 
   /**
@@ -196,7 +223,7 @@ export class ImageDataDrawingContext {
    * @returns {TextMetrics} The text metrics of the string
    */
   measureText(text) {
-    return getTextMetrics(text, this.#font);
+    return this.#rasterizer.getTextMetrics(text, this.#textStyle);
   }
 
 }

@@ -1,21 +1,10 @@
-export default {
+import Font from '../../interfaces/Font.js';
+
+export default new Font({
   name: 'pixi',
   type: 'bitmap',
   baseHeight: 5,
-  glpyhs: {
-    'none': {
-      vOffset: -2,
-      width: 7,
-      data: [
-        0b0001000,
-        0b0010100,
-        0b0110110,
-        0b1110111,
-        0b0111110,
-        0b0010100,
-        0b0001000
-      ]
-    },
+  glyphs: {
     '!': {
       vOffset: -2,
       width: 1,
@@ -92,7 +81,10 @@ export default {
       data: [
         0b1,
         0b1,
-      ]
+      ],
+      kerning: {
+        's': -1
+      }
     },
     '^': {
       vOffset: -1,
@@ -111,7 +103,7 @@ export default {
       ]
     },
     ' ': {
-      width: 2,
+      width: 3,
       data: [0]
     },
     '+': {
@@ -174,9 +166,9 @@ export default {
     },
     '-': {
       vOffset: 1,
-      width: 5,
+      width: 4,
       data: [
-        0b11111
+        0b1111
       ]
     },
     '_': {
@@ -422,8 +414,8 @@ export default {
       ]
     },
     ':': {
-      vOffset: -1,
-      width: 2,
+      vOffset: 0,
+      width: 1,
       data: [
         0b1,
         0b0,
@@ -648,15 +640,15 @@ export default {
     },
     'L': {
       vOffset: -2,
-      width: 5,
+      width: 4,
       data: [
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000,
-        0b11111
+        0b1000,
+        0b1000,
+        0b1000,
+        0b1000,
+        0b1000,
+        0b1000,
+        0b1111
       ]
     },
     'M': {
@@ -761,7 +753,10 @@ export default {
         0b00100,
         0b00100,
         0b00100
-      ]
+      ],
+      kerning: {
+        'e': -1
+      }
     },
     'U': {
       vOffset: -2,
@@ -865,13 +860,13 @@ export default {
       ]
     },
     'c': {
-      width: 5,
+      width: 4,
       data: [
-        0b01110,
-        0b10001,
-        0b10000,
-        0b10001,
-        0b01110
+        0b0110,
+        0b1001,
+        0b1000,
+        0b1001,
+        0b0110
       ]
     },
     'd': {
@@ -898,18 +893,22 @@ export default {
       ]
     },
     'f': {
-      vOffset: -3,
+      vOffset: -2,
       width: 3,
       data: [
         0b011,
         0b100,
-        0b100,
-        0b111,
+        0b110,
         0b100,
         0b100,
         0b100,
         0b100
-      ]
+      ],
+      kerning: {
+        'e': -1,
+        'o': -1,
+        'r': -1,
+      }
     },
     'g': {
       width: 4,
@@ -920,7 +919,7 @@ export default {
         0b1001,
         0b0111,
         0b0001,
-        0b1001,
+        0b0001,
         0b0110
       ]
     },
@@ -995,7 +994,7 @@ export default {
     'm': {
       width: 7,
       data: [
-        0b1110110,
+        0b0110110,
         0b1001001,
         0b1001001,
         0b1001001,
@@ -1049,14 +1048,18 @@ export default {
       ]
     },
     'r': {
-      width: 4,
+      width: 3,
       data: [
-        0b1011,
-        0b1100,
-        0b1000,
-        0b1000,
-        0b1000
-      ]
+        0b101,
+        0b110,
+        0b100,
+        0b100,
+        0b100
+      ],
+      kerning: {
+        'a': -1,
+        ',': -1
+      }
     },
     's': {
       width: 4,
@@ -1079,7 +1082,10 @@ export default {
         0b100,
         0b100,
         0b011
-      ]
+      ],
+      kerning: {
+        'a': -1
+      }
     },
     'u': {
       width: 4,
@@ -1130,7 +1136,7 @@ export default {
         0b1001,
         0b0111,
         0b0001,
-        0b1001,
+        0b0001,
         0b0110
       ]
     },
@@ -1151,6 +1157,19 @@ export default {
         0b01101,
         0b10110,
       ]
+    },
+    '©': {
+      vOffset: -2,
+      width: 6,
+      data: [
+        0b011110,
+        0b100001,
+        0b101101,
+        0b101001,
+        0b101101,
+        0b100001,
+        0b011110
+      ]
     }
   }
-};
+});

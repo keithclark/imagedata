@@ -1,3 +1,5 @@
+import { mix } from '../lib/colorUtils.js';
+
 /**
  * The PixelView view provides an interface for reading and writing pixels in 
  * ImageData objects by accessing the RGBA values in the underlying array 
@@ -102,20 +104,3 @@ export default class PixelView {
   }
 }
 
-const mix = (colorB, colorA) => {
-  let or = (colorA >> 24 & 0xff);
-  let og = (colorA >> 16 & 0xff);
-  let ob = (colorA >> 8 & 0xff);
-  let oa = (colorA & 0xff) / 255;
-  
-  let nr = (colorB >> 24 & 0xff);
-  let ng = (colorB >> 16 & 0xff);
-  let nb = (colorB >> 8 & 0xff);
-  let na = (colorB & 0xff) / 255;
-
-  let mr = nr * na * (1 - oa) + or * oa;
-  let mg = ng * na * (1 - oa) + og * oa; 
-  let mb = nb * na * (1 - oa) + ob * oa;
-
-  return (mr << 24) + (mg << 16) + (mb << 8) + 0xff >>> 0;
-};
