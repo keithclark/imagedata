@@ -57,10 +57,10 @@ export const drawFilledRect = (pixelView, x, y, width, height, color = 0xfffffff
     return;
   }
 
-  if (noBlending || (color & 0xff) === 0xff) {
+  if (noBlending) {
     drawMethod = pixelView.setColor.bind(pixelView);
   } else {
-    drawMethod = pixelView.blendColor.bind(pixelView);
+    drawMethod = pixelView.getOptimalRenderMethodForColor(color);
   }
   
   for (let col = startCol; col < endCol; col++) {

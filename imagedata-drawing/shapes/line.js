@@ -19,7 +19,7 @@ export const line = (pixelView, x0, y0, x1, y1, color = 0xffffffff) => {
   const sy = (y0 < y1) ? 1 : -1;
   let step = dx - dy;
   
-  const setPixel = (color & 0xff) === 0xff ? pixelView.setColor.bind(pixelView) : pixelView.blendColor.bind(pixelView);
+  const setPixel = pixelView.getOptimalRenderMethodForColor(color);
 
   // eslint-disable-next-line no-constant-condition
   while (true) {

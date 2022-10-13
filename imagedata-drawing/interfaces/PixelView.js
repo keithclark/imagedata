@@ -86,6 +86,20 @@ export default class PixelView {
       this.#dataView.setUint32((y * this.#width + x) * 4, mixedColor);
     }     
   }
+
+  /**
+   * Returns the optimal method to call for rendering a pixel based on the alpha
+   * channel of the given colour.
+   * 
+   * @param {Number} color Unsigned 32 bit integer color value 
+   * @returns {Function} the optimal render method for drawing
+   */
+  getOptimalRenderMethodForColor(color) {
+    if ((color & 0xff) != 0xff) {
+      return this.blendColor.bind(this);
+    }
+    return this.setColor.bind(this);
+  }
 }
 
 const mix = (colorB, colorA) => {
