@@ -3,6 +3,7 @@ import Rect from './Rect.js';
 import TextMetrics from './TextMetrics.js';
 import TextWalker from './TextWalker.js';
 
+
 /**
  * @typedef {import('./Path.js').default} Path
  * @typedef {import('./TextStyle.js').default} TextStyle
@@ -12,12 +13,13 @@ export default class Rasterizer {
 
   /** @type {PixelView} */
   #pixelView;
-
+  #imageData;
 
   /**
    * @param {ImageData} imageData The `ImageData` instance to draw to
    */
   constructor(imageData) {
+    this.#imageData = imageData;
     this.#pixelView = new PixelView(imageData);
   }
 
@@ -71,7 +73,6 @@ export default class Rasterizer {
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-
       setPixel(x0, y0, color);
 
       if (x0 === x1 && y0 === y1) {
@@ -127,7 +128,6 @@ export default class Rasterizer {
    * @param {Number} color - The color of the fill
    */
   drawFilledPath(path, color = 0xffffffff) {
-
     path.subPaths.forEach(subPath => {
       const { points } = subPath;
 
@@ -242,5 +242,102 @@ export default class Rasterizer {
       0,
       width
     );
+  }
+
+  /**
+   * 
+   * @param {*} imageData 
+   */
+  drawImage(imageData, dx, dy, dw = imageData.width, dh = imageData.height, sx = 0, sy = 0, sw = imageData.width, sh = imageData.height) {
+    const srcBounds = new Rect(sx, sy, sw, sh);
+    const destBounds = new Rect(dx, dy, dw, dh);
+    const xStep = srcBounds.width / dw;
+    const yStep = srcBounds.height / dh;
+    const q = new PixelView(imageData);
+
+    for (let y = 0; y < destBounds.height; y++) {
+      for (let x = 0; x < destBounds.width; x++) {
+        this.#pixelView.blendColor(x + destBounds.left, y + destBounds.top, q.getColor((srcBounds.left + x * xStep) | 0, (srcBounds.top + y * yStep) | 0));
+      }
+    }
+  }
+
+
+  /**
+   * Draws the given ImageData object to the underyling ImageData object. If a 
+   * dirty rectangle is provided, only the pixels from that rectangle are 
+   * painted.
+   * 
+   * @param {ImageData} imageData - The ImageData object containing the image to draw
+   * @param {Number} dx - The x-axis coordinate to draw the image at. Can be negative
+   * @param {Number} dy - The y-axis coordinate to draw the image at. Can be negative.
+   * @param {Number} dirtyX - The x-axis coordinate to start copying from. Can be negative
+   * @param {Number} dirtyY - The y-axis coordinate to start copying from. Can be negative
+   * @param {Number} dirtyWidth - The number of columns to copy
+   * @param {Number} dirtyHeight - The number of rows to copy
+   */
+  putImageData(imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
+
+    const clip = (r1, r2) => {
+      return new Rect(
+        Math.max(r1.left, r2.left),
+        Math.max(r1.top, r2.top),
+        Math.min(r1.right, r2.width) - Math.max(r1.left, r2.left),
+        Math.min(r1.bottom, r2.height) - Math.max(r1.top, r2.top),
+      );
+    };
+
+    if (dirtyX < 0) {
+      dirtyWidth += dirtyX;
+      dirtyX = 0;
+    } else {
+      dx += dirtyX;
+    }
+
+    if (dx < 0) {
+      dirtyWidth += dx;
+      dirtyX -= dx;
+      dx = 0;
+    }
+
+    if (dirtyY < 0) {
+      dirtyHeight += dirtyY;
+      dirtyY = 0;
+    } else {
+      dy += dirtyY;
+    }
+
+    if (dy < 0) {
+      dirtyHeight += dy;
+      dirtyY -= dy;
+      dy = 0;
+    }
+
+
+    const imageBounds = new Rect(0, 0, this.#imageData.width, this.#imageData.height);
+    const srcClipBounds = new Rect(0, 0, imageData.width, imageData.height);
+    const srcBounds = new Rect(dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+
+    const r = clip(srcBounds, srcClipBounds);
+    if (r.width === 0 || r.height === 0) {
+      return;
+    }
+
+    const destBounds = new Rect(dx, dy, r.width, r.height);
+    const q = clip(destBounds, imageBounds);
+     
+    const sourceLines = q.height;
+    const sourceLength = q.width * 4;
+    const destLength = this.#imageData.width * 4;
+  
+    let sourcePos = ((r.top * imageData.width) + r.left) * 4;
+    let destPos = ((q.top * this.#imageData.width) + q.left) * 4;
+
+    
+    for (let r = 0;r < sourceLines; r++) {
+      this.#imageData.data.set(imageData.data.slice(sourcePos, sourcePos + sourceLength), destPos);
+      destPos += destLength;
+      sourcePos += imageData.width * 4;
+    }
   }
 }

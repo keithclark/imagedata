@@ -6,9 +6,13 @@ import TextStyle from './interfaces/TextStyle.js';
 
 /**
  * @typedef {import('./interfaces/TextMetrics.js').default} TextMetrics
+ * @typedef {import('imagedata').default} ImageData
  */
 
-export class ImageDataDrawingContext {
+/** 
+ * 
+ */
+export default class ImageDataDrawingContext {
   #rasterizer;
   #strokeColor = 0x000000ff;
   #fillColor = 0x000000ff;
@@ -63,7 +67,7 @@ export class ImageDataDrawingContext {
    * @type {String} The CSS color to use as the fill style
    */
   get fillStyle() {
-    return `#${this.#strokeColor.toString(16).padStart(8, '0')}`;
+    return `#${this.#fillColor.toString(16).padStart(8, '0')}`;
   }
 
   set fillStyle(value) {
@@ -226,4 +230,39 @@ export class ImageDataDrawingContext {
     return this.#rasterizer.getTextMetrics(text, this.#textStyle);
   }
 
+
+  /**
+   * @type {{
+   * (imageData: ImageData, dx:number, dy:number) => null;
+   * (imageData: ImageData, dx:number, dy:number, dWidth:number, dHeight:number) => null;
+   * }}
+   */
+  drawImage(imageData, ...args) {
+    if (args.length === 2) {
+      this.#rasterizer.drawImage(imageData, args[0], args[1]);
+    } else if (args.length === 4) {
+      this.#rasterizer.drawImage(imageData, args[0], args[1], args[2], args[3]);
+    } else if (args.length === 8) {
+      this.#rasterizer.drawImage(imageData, args[4], args[5], args[6], args[7], args[0], args[1], args[2], args[3]);
+    } else {
+      throw new SyntaxError('Incorrect number of arguments');
+    }
+  }
+
+  /**
+   * Draws the given source ImageData object onto the underyling ImageData, 
+   * replacing any destination pixels with the source data. If a dirty rectangle
+   * is provided, only the pixels from that rectangle are drawn.
+   * 
+   * @param {ImageData} imageData - The ImageData object containing the image to draw
+   * @param {Number} dx - The x-axis coordinate to draw the image at. Can be negative
+   * @param {Number} dy - The y-axis coordinate to draw the image at. Can be negative
+   * @param {Number} dirtyX - The x-axis coordinate to start copying from. Can be negative. Defaults to `0`
+   * @param {Number} dirtyY - The y-axis coordinate to start copying from. Can be negative. Defaults to `0`
+   * @param {Number} dirtyWidth - The number of columns to copy.  Defaults to source width
+   * @param {Number} dirtyHeight - The number of rows to copy. Defaults to source height
+   */
+  putImageData(imageData, dx, dy, dirtyX = 0, dirtyY = 0, dirtyWidth = imageData.width, dirtyHeight = imageData.height) {
+    this.#rasterizer.putImageData(imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+  }
 }
