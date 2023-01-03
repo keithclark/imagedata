@@ -19,10 +19,13 @@ const EMPTY_GLYPH = Object.freeze({
 });
 
 /**
- * An object that represent a font
+ * An object that represents a font
  */
 export default class Font {
 
+  /**
+   * @param {Object} config 
+   */
   constructor(config) {
     this.glyphs = config.glyphs || {};
     this.baseHeight = config.baseHeight;

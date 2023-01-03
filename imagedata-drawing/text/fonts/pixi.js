@@ -755,7 +755,8 @@ export default new Font({
         0b00100
       ],
       kerning: {
-        'e': -1
+        'e': -1,
+        'o': -1
       }
     },
     'U': {
@@ -907,7 +908,7 @@ export default new Font({
       kerning: {
         'e': -1,
         'o': -1,
-        'r': -1,
+        'r': -1
       }
     },
     'g': {
@@ -989,7 +990,10 @@ export default new Font({
         0b1,
         0b1,
         0b1
-      ]
+      ],
+      kerning: {
+        'j': -2
+      }
     },
     'm': {
       width: 7,
@@ -1058,7 +1062,9 @@ export default new Font({
       ],
       kerning: {
         'a': -1,
-        ',': -1
+        ',': -1,
+        '.': -1,
+        '/': -1
       }
     },
     's': {
@@ -1069,7 +1075,10 @@ export default new Font({
         0b0110,
         0b0001,
         0b1110
-      ]
+      ],
+      kerning: {
+        ',': -1,
+      }
     },
     't': {
       vOffset: -2,
