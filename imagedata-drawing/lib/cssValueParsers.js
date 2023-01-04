@@ -1,11 +1,11 @@
 import { rgbaToUint32, hslaToUint32 } from './colorUtils.js';
 import CSS_NAMED_COLORS from '../cssNamedColors.js';
 
-const RE_RGB_COLOR_SYNTAX = /^rgb\(\s*((?:\d*\.)?\d+%?)\s*,\s*((?:\d*\.)?\d+%?)\s*,\s*((?:\d*\.)?\d+%?)\s*\)$/;
-const RE_RGBA_COLOR_SYNTAX = /^rgba\(\s*((?:\d*\.)?\d+%?)\s*,\s*((?:\d*\.)?\d+%?)\s*,\s*((?:\d*\.)?\d+%?)\s*,\s*((?:\d*\.)?\d+%?)\s*\)$/;
+const RE_RGB_COLOR_SYNTAX = /^rgb\(\s*((?:\d*\.)?\d+%?)\s*[\s,]\s*((?:\d*\.)?\d+%?)\s*[\s,]\s*((?:\d*\.)?\d+%?)\s*\)$/;
+const RE_RGBA_COLOR_SYNTAX = /^rgba\(\s*((?:\d*\.)?\d+%?)\s*[\s,]\s*((?:\d*\.)?\d+%?)\s*[\s,]\s*((?:\d*\.)?\d+%?)\s*[,//]\s*((?:\d*\.)?\d+%?)\s*\)$/;
 
-const RE_HSL_COLOR_SYNTAX = /^hsl\(\s*((?:\d*\.)?\d+?(?:deg|rad)?)?\s*,\s*((?:\d*\.)?\d+%)\s*,\s*((?:\d*\.)?\d+%)\s*\)$/;
-const RE_HSLA_COLOR_SYNTAX = /^hsla\(\s*((?:\d*\.)?\d+?(?:deg|rad)?)?\s*,\s*((?:\d*\.)?\d+%)\s*,\s*((?:\d*\.)?\d+%)\s*,\s*((?:\d*\.)?\d+%?)\s*\)$/;
+const RE_HSL_COLOR_SYNTAX = /^hsl\(\s*((?:\d*\.)?\d+?(?:deg|rad)?)?\s*[\s,]\s*((?:\d*\.)?\d+%)\s*[\s,]\s*((?:\d*\.)?\d+%)\s*\)$/;
+const RE_HSLA_COLOR_SYNTAX = /^hsla\(\s*((?:\d*\.)?\d+?(?:deg|rad)?)?\s*[\s,]\s*((?:\d*\.)?\d+%)\s*[\s,]\s*((?:\d*\.)?\d+%)\s*[,//]\s*((?:\d*\.)?\d+%?)\s*\)$/;
 
 const RE_HEX3_COLOR_SYNTAX = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/;
 const RE_HEX4_COLOR_SYNTAX = /^#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])$/;
