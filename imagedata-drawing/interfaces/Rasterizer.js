@@ -30,8 +30,8 @@ export default class Rasterizer {
    * 
    * @param {Number} x - The x-axis coordinate to draw from
    * @param {Number} y - The y-axis coordinate to draw from
-   * @param {Number} width - Number of pixels to clear on the x-axis (can be negative)
-   * @param {Number} height - Number of pixels to clear on the y-axis (can be negative)
+   * @param {Number} width - Number of pixels to clear along the x-axis (can be negative)
+   * @param {Number} height - Number of pixels to clear along the y-axis (can be negative)
    */
   clear(x, y, width, height) {
     const bounds = new Rect(x, y, width, height);
@@ -245,15 +245,22 @@ export default class Rasterizer {
   }
 
   /**
-   * 
-   * @param {*} imageData 
+   * @param {ImageData} image - The image object to draw
+   * @param {Number} sx - The x-axis coordinate of the top-left corner from which the image data will be extracted
+   * @param {Number} sy - The y-axis coordinate of the top-left corner from which the image data will be extracted
+   * @param {Number} sWidth - Width of the source image data to extract
+   * @param {Number} sHeight - Height of the source image data to extract.
+   * @param {Number} dx - The x-axis coordinate to place the image in the destination image
+   * @param {Number} dy - The y-axis coordinate to place the image in the destination image
+   * @param {Number} dWidth - The width to draw the source image in the destination image
+   * @param {Number} dHeight - The height to draw the source image in the destination image
    */
-  drawImage(imageData, dx, dy, dw = imageData.width, dh = imageData.height, sx = 0, sy = 0, sw = imageData.width, sh = imageData.height) {
-    const srcBounds = new Rect(sx, sy, sw, sh);
-    const destBounds = new Rect(dx, dy, dw, dh);
-    const xStep = srcBounds.width / dw;
-    const yStep = srcBounds.height / dh;
-    const q = new PixelView(imageData);
+  drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) {
+    const srcBounds = new Rect(sx, sy, sWidth, sHeight);
+    const destBounds = new Rect(dx, dy, dWidth, dHeight);
+    const xStep = srcBounds.width / dWidth;
+    const yStep = srcBounds.height / dHeight;
+    const q = new PixelView(image);
 
     for (let y = 0; y < destBounds.height; y++) {
       for (let x = 0; x < destBounds.width; x++) {

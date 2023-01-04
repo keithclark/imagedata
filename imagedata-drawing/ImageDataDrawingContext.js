@@ -33,6 +33,7 @@ export default class ImageDataDrawingContext {
    * The font to use when rendering text
    * 
    * @type {String} The font family
+   * @example context.font = "pixi"
    */
   get font() {
     return this.#textStyle.font?.name || null;
@@ -49,6 +50,10 @@ export default class ImageDataDrawingContext {
    * Color to use when outlining shapes.
    * 
    * @type {String} The CSS color to use as the stroke style
+   * @example context.fillStyle = "orange";
+   * @example context.fillStyle = "#ff0000";
+   * @example context.fillStyle = "rgb(255,0,255,.5)";
+   * @example context.fillStyle = "hsla(255 50% 50% / .5)";
    */
   get strokeStyle() {
     return `#${this.#strokeColor.toString(16).padStart(8, '0')}`;
@@ -65,6 +70,10 @@ export default class ImageDataDrawingContext {
    * Color to use when filling shapes. 
    * 
    * @type {String} The CSS color to use as the fill style
+   * @example context.fillStyle = "red";
+   * @example context.fillStyle = "#f0f";
+   * @example context.fillStyle = "rgba(255,0,255,.5)";
+   * @example context.fillStyle = "hsl(255,50%,50%)";
    */
   get fillStyle() {
     return `#${this.#fillColor.toString(16).padStart(8, '0')}`;
@@ -81,6 +90,7 @@ export default class ImageDataDrawingContext {
    * Get or set the spacing between letters when rendering text.
    * 
    * @type {String} The spacing value including unit
+   * @example context.letterSpacing = "1.5px";
    */
   get letterSpacing() {
     return this.#textStyle.letterSpacing;
@@ -94,6 +104,7 @@ export default class ImageDataDrawingContext {
    * Get or set the spacing between words when rendering text.
    * 
    * @type {String} The spacing value including unit
+   * @example context.wordSpacing = "3px";
    */
   get wordSpacing() {
     return this.#textStyle.wordSpacing;
@@ -201,6 +212,7 @@ export default class ImageDataDrawingContext {
    * @param {String} text - The text to render
    * @param {Number} x The x-axis coordinate to start drawing the text.
    * @param {Number} y The y-axis coordinate to start drawing the text.
+   * @example context.fillText("I am filled", 20, 20)
    */
   fillText(text, x, y) {
     this.#rasterizer.drawFilledText(text, x, y, this.#fillColor, this.#textStyle);
@@ -214,6 +226,7 @@ export default class ImageDataDrawingContext {
    * @param {String} text - The text to render
    * @param {Number} x The x-axis coordinate to start drawing the text.
    * @param {Number} y The y-axis coordinate to start drawing the text.
+   * @example context.strokeText("I have a stroked outline", 20, 20)
    */
   strokeText(text, x, y) {
     this.#rasterizer.drawStrokedText(text, x, y, this.#strokeColor, this.#textStyle);
@@ -232,37 +245,57 @@ export default class ImageDataDrawingContext {
 
 
   /**
-   * @type {{
-   * (imageData: ImageData, dx:number, dy:number) => null;
-   * (imageData: ImageData, dx:number, dy:number, dWidth:number, dHeight:number) => null;
-   * }}
+   * Draws an ImageData onto the image, preserving transparency and with optional
+   * scaling.
+   * 
+   * @param {ImageData} image - The image object to draw
+   * @param {Number} [sx=0] - The x-axis coordinate of the top-left corner from which the image data will be extracted. Can be negative
+   * @param {Number} [sy=0] - The y-axis coordinate of the top-left corner from which the image data will be extracted. Can be negative
+   * @param {Number} [sWidth] - Width of the source image data to extract. If omitted, the source image is drawn at its natural width.
+   * @param {Number} [sHeight] - Height of the source image data to extract. If omitted, the source image is drawn at its natural height.
+   * @param {Number} dx - The x-axis coordinate to place the image in the destination image. Can be negative
+   * @param {Number} dy - The y-axis coordinate to place the image in the destination image. Can be negative
+   * @param {Number} [dWidth] - The width to draw the source image in the destination image. If omitted, the source image is drawn at its natural width.
+   * @param {Number} [dHeight] - The height to draw the source image in the destination image. If omitted, the source image is drawn at its natural height.
+   * @paramlist image, dx, dy
+   * @paramlist image, dx, dy, dWidth, dHeight
+   * @paramlist image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
    */
-  drawImage(imageData, ...args) {
-    if (args.length === 2) {
-      this.#rasterizer.drawImage(imageData, args[0], args[1]);
-    } else if (args.length === 4) {
-      this.#rasterizer.drawImage(imageData, args[0], args[1], args[2], args[3]);
-    } else if (args.length === 8) {
-      this.#rasterizer.drawImage(imageData, args[4], args[5], args[6], args[7], args[0], args[1], args[2], args[3]);
+  drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) {
+    if (arguments.length === 3) {
+      this.#rasterizer.drawImage(image, 0, 0, image.width, image.height, sx, sy, image.width, image.height);
+    } else if (arguments.length === 5) {
+      this.#rasterizer.drawImage(image, 0, 0, image.width, image.height, sx, sy, sWidth, sHeight);
+    } else if (arguments.length === 9) {
+      this.#rasterizer.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
     } else {
       throw new SyntaxError('Incorrect number of arguments');
     }
   }
+
 
   /**
    * Draws the given source ImageData object onto the underyling ImageData, 
    * replacing any destination pixels with the source data. If a dirty rectangle
    * is provided, only the pixels from that rectangle are drawn.
    * 
-   * @param {ImageData} imageData - The ImageData object containing the image to draw
+   * @param {ImageData} image - The ImageData object containing the image to draw
    * @param {Number} dx - The x-axis coordinate to draw the image at. Can be negative
    * @param {Number} dy - The y-axis coordinate to draw the image at. Can be negative
-   * @param {Number} dirtyX - The x-axis coordinate to start copying from. Can be negative. Defaults to `0`
-   * @param {Number} dirtyY - The y-axis coordinate to start copying from. Can be negative. Defaults to `0`
-   * @param {Number} dirtyWidth - The number of columns to copy.  Defaults to source width
-   * @param {Number} dirtyHeight - The number of rows to copy. Defaults to source height
+   * @param {Number} [dirtyX=0] - The x-axis coordinate to start copying from. Can be negative.
+   * @param {Number} [dirtyY=0] - The y-axis coordinate to start copying from. Can be negative.
+   * @param {Number} [dirtyWidth] - The number of columns to copy.  Defaults to source image width
+   * @param {Number} [dirtyHeight] - The number of rows to copy. Defaults to source image height
+   * @paramlist image, dx, dy
+   * @paramlist image, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight
    */
-  putImageData(imageData, dx, dy, dirtyX = 0, dirtyY = 0, dirtyWidth = imageData.width, dirtyHeight = imageData.height) {
-    this.#rasterizer.putImageData(imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+  putImageData(image, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
+    if (arguments.length === 3) {
+      this.#rasterizer.putImageData(image, dx, dy, 0, 0, image.width, image.height);
+    } else if (arguments.length === 7) {
+      this.#rasterizer.putImageData(image, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+    } else {
+      throw new SyntaxError('Incorrect number of arguments');
+    }
   }
 }

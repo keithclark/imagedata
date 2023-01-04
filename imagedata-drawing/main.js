@@ -5,4 +5,4 @@ import { registerFont } from './text/fontRegistry.js';
 import pixi from './text/fonts/pixi.js';
 registerFont(pixi, ['pixi']);
 
-export default ImageDataDrawingContext
+export default ImageDataDrawingContext;
