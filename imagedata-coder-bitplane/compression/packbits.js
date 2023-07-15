@@ -16,13 +16,16 @@ export const depack = (buffer, size) => {
 
     let byte = srcBuffer.getInt8(srcPos++);
 
-    if (byte < 0) {
+    if (byte === -128) {
+      // No Op
+    } else if (byte < 0) {
+      // One byte of data, repeated (1 − n) times in the decompressed output
       const byte2 = srcBuffer.getUint8(srcPos++);
-      for (let c = 0;c < 1 - byte;c++) {
+      for (let c = 0; c < 1 - byte; c++) {
         outView.setUint8(destPos++, byte2);
       }
-      // -1 to -127 -> one byte of data repeated (1 - byte) times
     } else {
+      // (1 + n) literal bytes of data
       for (let c = 0; c < 1 + byte; c++) {
         outView.setUint8(destPos++, srcBuffer.getUint8(srcPos++));
       }

@@ -1,151 +1,241 @@
 import { decode as decodeBitplanes, IndexedPalette } from 'imagedata-coder-bitplane';
 import { depack as depackPackBits } from 'imagedata-coder-bitplane/compression/packbits.js';
+import { IffChunkReader } from './IffChunkReader.js';
 import { 
-  CHUNK_ID_ACBM,
-  CHUNK_ID_ILBM,
-  CHUNK_ID_FORM,
-  CHUNK_ID_BMHD,
-  CHUNK_ID_CMAP,
-  CHUNK_ID_ABIT,
-  CHUNK_ID_BODY,
-  CHUNK_ID_CAMG,
   COMPRESSION_NONE,
   COMPRESSION_PACKBITS,
+  COMPRESSION_ATARI,
   AMIGA_MODE_EHB
 } from './consts.js';
 
 
 /**
  * Decodes an IFF image and returns a ImageData object containing the
- * converted data. 
+ * converted data. Supports:
+ * - ILBM and ACBM formats
+ * - Amiga Extra Half Brite (EHB)
+ * - Compression (Uncompressed, Packbits and Atari ST vertical RLE)
+ * 
  * @param {ArrayBuffer} buffer - An array buffer containing the IFF image
  * @returns {Promise<{palette: IndexedPalette,imageData: ImageData}>} Image data and palette for the image
  */
-export const decode = async buffer => {
+export const decode = async (buffer) => {
 
-  const dataView = new DataView(buffer);
-  let chunk = parseChunk(dataView);
+  let compression;
   let width;
   let height;
+  let planes;
   let palette;
-  let compression = 0;
-  let pos = 0;
-  let amigaMode = 0;
-  let bitPlanes;
+  let amigaMode;
+  let bytesPerLine;
+  let bitplaneData;
+  let bitplaneEncoding;
 
-  // FORM
-  if (chunk.id !== CHUNK_ID_FORM) {
-    throw 'Not an IFF';
+  const reader = new IffChunkReader(buffer);
+
+  // Check this is an IFF
+  const formChunk = reader.readChunk();
+  if (formChunk.id !== 'FORM') {
+    error();
   }
 
-  // ILBM or ACBM
-  const type = chunk.dataView.getUint32(0);
-  if (type !== CHUNK_ID_ILBM && type !== CHUNK_ID_ACBM) {
-    throw 'Invalid image format';
+  // Is this a bitmap image?
+  const type = formChunk.reader.readString(4);
+  if (type !== 'ILBM' && type !== 'ACBM') {
+    error();
   }
 
-  pos += 4;
+  // Decode the image chunks
+  while (!formChunk.reader.eof()) {
+    const { id, reader, length } = formChunk.reader.readChunk();
 
-  while (pos < chunk.length) {
-    const chunk2 = parseChunk(chunk.dataView, pos);
+    // Parse the bitmap header.
+    if (id === 'BMHD') {
+      width = reader.readWord();          // [+0x00] image width
+      height = reader.readWord();         // [+0x02] image height
+      reader.readWord();                  // [+0x04] x-origin
+      reader.readWord();                  // [+0x06] y-origin
+      planes = reader.readByte();         // [+0x08] number of planes
+      reader.readByte();                  // [+0x09] mask  
+      compression = reader.readByte();    // [+0x0A] compression mode
 
-
-    // BMHD
-    if (chunk2.id === CHUNK_ID_BMHD) {
-      width = chunk2.dataView.getUint16(0);
-      height = chunk2.dataView.getUint16(2);
-      bitPlanes = chunk2.dataView.getUint8(8);
-      compression = chunk2.dataView.getUint8(10);
+      bytesPerLine = Math.ceil(width / 8);
+    } 
+    
+    // The CAMG chunk. Contains Amiga mode meta data
+    // - bit 7  -- EHB (Extra Half-Brite) mode
+    // - bit 11 -- HAM Hold-And-Modify)
+    else if (id === 'CAMG') {
+      amigaMode = reader.readLong();
     }
 
-    // CMAP chunk. Contains the image colour palette
-    else if (chunk2.id === CHUNK_ID_CMAP) {
-      const size = chunk2.length / 3;
+    // The colour map. Stores the indexed palette.
+    else if (id === 'CMAP') {
+      const size = length / 3;            // 3 bytes per colour entry
       palette = new IndexedPalette(size);
       for (let c = 0; c < size; c++) {
-        const r = chunk2.dataView.getUint8(c * 3);
-        const g = chunk2.dataView.getUint8(c * 3 + 1);
-        const b = chunk2.dataView.getUint8(c * 3 + 2); 
+        const r = reader.readByte();      // Red channel
+        const g = reader.readByte();      // Green channel
+        const b = reader.readByte();      // Blue channel
         palette.setColor(c, r, g, b);
       }
     }
 
-    // The CAMG chunk. Contains amiga mode metadata (EHB)
-    else if (chunk2.id === CHUNK_ID_CAMG) {
-      amigaMode = chunk2.dataView.getUint32(0);
-    }
-
-    // The BODY chunk. Contains the ILBM image data. As per the IFF spec, this
-    // chunk must come after BMHD, CAMG and CMAP so we can decode the image data 
-    // and return from this chunk without processing any other chunks.
-    else if (chunk2.id === CHUNK_ID_BODY) {
-      if (!palette) {
-        throw 'Non-bitplane images are not supported';
-      }
-
-      // If the image uses the Amiga's Extra Half-Brite mode and we only have a
-      // 32 colour palette, we need to add the extra half-bright colours to be
-      // able to decode the image correctly.
-      if ((amigaMode & AMIGA_MODE_EHB) === AMIGA_MODE_EHB && palette.length === 32) {
-        palette = createEhbPalette(palette);
-      }
-
-      let bitplaneData = chunk2.dataView.buffer.slice(chunk2.start, chunk2.end);
-      if (compression === COMPRESSION_PACKBITS) {
-        const outSize = Math.ceil(width / 8) * height * bitPlanes;
-        bitplaneData = depackPackBits(bitplaneData, outSize);
-      } else if (compression !== COMPRESSION_NONE) {
-        throw `Unknown compression method ${compression}`;
-      }
-      const imageData = await decodeBitplanes(bitplaneData, palette, Math.ceil(width / 16) * 16, { format: 'line' });
-      return {
-        palette,
-        imageData
-      };
-    }
-
     // ABIT - ACBM bitmap data
-    else if (chunk2.id === CHUNK_ID_ABIT) {
-      const bitplaneData = chunk2.dataView.buffer.slice(chunk2.start, chunk2.end);
-      const imageData = await decodeBitplanes(bitplaneData, palette, width, { format: 'contiguous' });
-      return {
-        palette,
-        imageData
-      };
+    else if (id === 'ABIT') {
+      bitplaneData = reader.readBytes(length);
+      bitplaneEncoding = 'contiguous';
     }
 
-    // Chunks are word aligned so, if the chunk length is even, move over the 
-    // padding byte.
-    if (chunk2.length % 2 === 1) {
-      pos++;
-    }
+    // Process the image body. If the image data is compressed then we 
+    // decompress it into bitplane data.
+    //
+    // Note: We don't convert the image to `ImageData` here because some IFF 
+    // implementations don't implement the spec properly and write the BODY 
+    // chunk before other data.
+    else if (id === 'BODY') {
 
-    // Move to the next chunk.
-    pos += chunk2.length + 8;
+      // No compression. Images are stored in line-interleaved format.
+      if (compression === COMPRESSION_NONE) {
+        bitplaneData = reader.readBytes(length);
+        bitplaneEncoding = 'line';
+      }
+
+      // Run-length encoded (Packbits)
+      else if (compression === COMPRESSION_PACKBITS) {
+        const outSize = bytesPerLine * height * planes;
+        bitplaneData = depackPackBits(reader.readBytes(length), outSize);
+        bitplaneEncoding = 'line';
+      }
+
+      // Atari ST "VDAT" compression. Images are stored as individual bitplanes
+      // which are run-length encoded in 16 pixel vertical strips.
+      else if (compression === COMPRESSION_ATARI) {
+        const bytesPerPlane = bytesPerLine * height;
+        const buffer = new Uint8Array(bytesPerPlane * planes);
+        let offset = 0;
+
+        // Each bitplane is stored in its own "VDAT" chunk. The data in these
+        // chunks is compressed.
+        while (!reader.eof()) {
+          const { id, reader: chunkReader } = reader.readChunk();
+          if (id === 'VDAT') {
+            const planeBuffer = depackVdatChunk(chunkReader, bytesPerLine, height);
+            buffer.set(new Uint8Array(planeBuffer), offset);
+            offset += bytesPerPlane;
+          }
+        }
+
+        // Combine all bitplanes and encode the result as contiguous
+        bitplaneData = buffer.buffer;
+        bitplaneEncoding = 'contiguous';
+      }
+    }
   }
 
+  // Assert that we have all the required structures before we try to convert
+  // the image into an `ImageData` object.
+
+  // FIXME: Only indexed palette images are currently supported
+  if (!bitplaneData || !palette) {
+    error();
+  }
+
+  // If the image uses the Amiga's Extra Half-Brite mode and we only have a
+  // 32 colour palette, we need to add the extra half-bright colours to be
+  // able to decode the image correctly.
+  if ((amigaMode & AMIGA_MODE_EHB) && palette.length === 32) {
+    palette = createEhbPalette(palette);
+  }
+
+  // Decode the bitplane data into `ImageData` and return it along with the 
+  // palette.
+
+  // FIXME: If the image uses EHB, should we return the original palette or the
+  // the extended version?
+  const imageData = await decodeBitplanes(bitplaneData, palette, Math.ceil(width / 16) * 16, { format: bitplaneEncoding });
+  return {
+    palette,
+    imageData
+  };
 };
 
 
 /**
- * Parses a data view and returns an IFF chunk
+ * Decompresses a single bitplane of data (stored in a VDAT chunk)
  * 
- * @param {DataView} dataView 
- * @param {Number} offset 
- * @returns 
+ * @param {IffChunkReader} reader - A chunk reader instance
+ * @param {number} bytesPerLine - Number of bytes in a bitplane scanline
+ * @param {number} height - Number of vertical pixels in the image
+ * @returns {ArrayBuffer} - Decompressed bitplane data
  */
-const parseChunk = (dataView, offset = 0) => {
-  const id = dataView.getUint32(offset);
-  const length = dataView.getUint32(offset + 4);
-  const start = dataView.byteOffset + offset + 8;
-  const end = start + length;
-  return {
-    id, 
-    start,
-    end,
-    length,
-    dataView: new DataView(dataView.buffer, start, length)
-  };
+const depackVdatChunk = (reader, bytesPerLine, height) => {
+  const commandCount = reader.readWord() - 2;
+  const commands = new Int8Array(reader.readBytes(commandCount));
+  const planeData = new Uint8Array(bytesPerLine * height);
+
+  let xOffset = 0;
+  let yOffset = 0;
+
+  /** @type {number} */
+  let count;
+
+  for (let cmd = 0; cmd < commandCount; cmd++) {
+
+    const command = commands[cmd];
+
+    if (command <= 0) { 
+      if (command === 0) {
+        // If cmd == 0 the copy count is taken from the data
+        count = reader.readWord();
+      } else {
+        // If cmd < 0 the copy count is taken from the command
+        count = -command;
+      }
+      
+      // write the data to the bitplane buffer
+      while (count-- > 0 && xOffset < bytesPerLine) {
+        const offset = xOffset + yOffset * bytesPerLine;
+        planeData[offset] = reader.readByte();
+        planeData[offset + 1] = reader.readByte();
+        if (++yOffset >= height) {
+          yOffset = 0;
+          xOffset += 2;
+        }    
+      }
+      
+    } else { 
+      if (command == 1) {
+        // If cmd == 1 the run-length count is taken from the data
+        count = reader.readWord();
+      } else {
+        // If cmd > 1 the command is used as the run-length count
+        count = command;
+      }
+
+      // Read the 16 bit values to repeat.
+      const hiByte = reader.readByte();
+      const loByte = reader.readByte();
+    
+      // write the run-length encoded data to the bitplane buffer
+      while (count-- > 0 && xOffset < bytesPerLine) {
+        const offset = xOffset + yOffset * bytesPerLine;
+        planeData[offset] = hiByte;
+        planeData[offset + 1] = loByte;
+        if (++yOffset >= height) {
+          yOffset = 0;
+          xOffset += 2;
+        }
+      }
+    
+      // Some images overflow so check EOF and bail out if we're done
+      if (reader.eof()) {
+        break;
+      }
+
+    }
+  }
+  return planeData.buffer;
 };
 
 
@@ -165,4 +255,12 @@ const createEhbPalette = palette => {
   }
   
   return ehbPalette;
+};
+
+
+/**
+ * Helper method for reporting terminal errors
+ */
+const error = () => {
+  throw 'Invalid file format';
 };
