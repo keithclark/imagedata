@@ -1,9 +1,9 @@
 /**
  * Decompresses data encoded with the packbits compression method
  * 
- * @param {ArrayBufffer} buffer A buffer containing the compressed data
+ * @param {ArrayBuffer} buffer A buffer containing the compressed data
  * @param {Number} size The number of bytes to decompress
- * @returns {ArrayBufffer} An array buffer containing the uncompressed data
+ * @returns {ArrayBuffer} An array buffer containing the uncompressed data
  */
 export const depack = (buffer, size) => {
   const outputBuffer = new ArrayBuffer(size);

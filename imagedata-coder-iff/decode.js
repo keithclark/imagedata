@@ -92,13 +92,12 @@ export const decode = async buffer => {
 
       let bitplaneData = chunk2.dataView.buffer.slice(chunk2.start, chunk2.end);
       if (compression === COMPRESSION_PACKBITS) {
-        const outSize = (width / 8) * height * bitPlanes;
+        const outSize = Math.ceil(width / 8) * height * bitPlanes;
         bitplaneData = depackPackBits(bitplaneData, outSize);
       } else if (compression !== COMPRESSION_NONE) {
-        throw 'Unknown compression method';
+        throw `Unknown compression method ${compression}`;
       }
-
-      const imageData = await decodeBitplanes(bitplaneData, palette, width, { format: 'line' });
+      const imageData = await decodeBitplanes(bitplaneData, palette, Math.ceil(width / 16) * 16, { format: 'line' });
       return {
         palette,
         imageData

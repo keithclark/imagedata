@@ -74,16 +74,16 @@ const decodeContiguous = (bufferView, imageDataView, colors, planes, bitPlaneLen
     const indexes = decodeWordsToPaletteIndexes(bufferView, wordIndex * 2, planes, bitPlaneLength);
     indexes.forEach((index, i) => {
       imageDataView.setUint32(((wordIndex * 16) + i) * 4, colors[index]);
-    })
+    });
   }
 };
 
 const decodeInterleavedWord = (bufferView, imageDataView, colors, planes, bitPlaneLength) => {
   for (let wordIndex = 0; wordIndex < bitPlaneLength; wordIndex++) {
-    const indexes = decodeWordsToPaletteIndexes(bufferView, wordIndex * 8, planes, 1);
+    const indexes = decodeWordsToPaletteIndexes(bufferView, wordIndex * (planes * 2), planes, 1);
     indexes.forEach((index, i) => {
       imageDataView.setUint32(((wordIndex * 16) + i) * 4, colors[index]);
-    })
+    });
   }
 };
 
@@ -94,7 +94,7 @@ const decodeInterleavedLine = (bufferView, imageDataView, colors, planes, bitPla
       const indexes = decodeWordsToPaletteIndexes(bufferView, p + (w * 2), planes, wordsPerLine);
       indexes.forEach((index, i) => {
         imageDataView.setUint32(((wordIndex * 16) + i + w * 16) * 4, colors[index]);
-      })
+      });
     }
     p += wordsPerLine * planes * 2;
   }
