@@ -29,7 +29,6 @@ await writeFile(destFilepath, Buffer.from(outBuffer));
 
 * `imagedata` - Implementation of the [`ImageData` interface](https://html.spec.whatwg.org/multipage/canvas.html#dom-imagedata-dev)
 * `imagedata-coder-bitplane` - Convert from/to bitplane format
-* `imagedata-coder-blit` - Copy pixels between `ImageData`.
 * `imagedata-coder-crackart` - Decode Atari ST Crack Art images
 * `imagedata-coder-degas` - Encode / decode Atari ST [Degas](https://en.wikipedia.org/wiki/DEGAS_(software)) images
 * `imagedata-coder-iff` - Decode Amiga [IFF](https://en.wikipedia.org/wiki/Interchange_File_Format) images.
