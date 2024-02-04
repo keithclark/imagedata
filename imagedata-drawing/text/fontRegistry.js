@@ -15,7 +15,7 @@ const registeredFonts = new Map();
  */
 export const registerFont = (font, aliases = []) => {
   registeredFonts.set(font.name, font);
-  aliases.forEach(family => {
+  aliases.forEach((family) => {
     registeredFonts.set(family, font);
   });
 };

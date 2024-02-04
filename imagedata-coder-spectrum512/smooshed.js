@@ -1,14 +1,13 @@
-import BitDataView from './BitReader.js';
+import BitView from './BitView.js';
 import ImageData from 'imagedata';
 
 import {
-  IndexedPalette,
-  decodeWordsToPaletteIndexes,
-  decodeBytesToPaletteIndexes
+  ImageDataIndexedPaletteWriter,
+  IndexedPalette, ContiguousBitplaneReader, createAtariStIndexedPalette, BitplaneReader
 } from 'imagedata-coder-bitplane';
 
+
 import {
-  createPalette,
   getPaletteColorOffset
 } from './common.js';
 
@@ -40,7 +39,7 @@ import {
 export const decompressPalette = (buffer) => {
   const palette = new ArrayBuffer(COLORS_PER_SCANLINE * IMAGE_HEIGHT * 2);
   const destView = new DataView(palette);
-  const srcView = new BitDataView(buffer);
+  const srcView = new BitView(buffer);
 
   let srcPos = 0;
   let outPos = 0;
@@ -116,12 +115,7 @@ export const decompressImage = (buffer) => {
  * @throws {Error} If the image data is invalid
  */
 export const decode = (buffer) => {
-  const imageData = new ImageData(IMAGE_WIDTH, IMAGE_HEIGHT);
-  const imageDataView = new DataView(imageData.data.buffer);
   const bufferView = new DataView(buffer);
-
-  let srcPosition = 0;
-  let destPosition = 0;
 
   // Check the file header is valid
   if (bufferView.getUint32(0) !== SPECTRUM_FILE_HEADER) {
@@ -131,41 +125,36 @@ export const decode = (buffer) => {
   const encodingMethod = bufferView.getUint8(buffer.byteLength - 1) & 1;
   const bitmapLength = bufferView.getUint32(4);
   const paletteLength = bufferView.getUint32(8);
-  const decompressedImageData = decompressImage(buffer.slice(12, 12 + bitmapLength));
+  const decompressedImageData = new Uint8Array(decompressImage(buffer.slice(12, 12 + bitmapLength)));
   const decompressedPaletteData = decompressPalette(buffer.slice(12 + bitmapLength, 12 + bitmapLength + paletteLength));
-  const bitplaneView = new DataView(decompressedImageData);
-  const paletteView = new DataView(decompressedPaletteData);
-  const { palette, bitsPerChannel } = createPalette(paletteView);
+
+  const palette = createAtariStIndexedPalette(new Uint8Array(decompressedPaletteData), COLORS_PER_SCANLINE * IMAGE_HEIGHT);
+  const imageData = new ImageData(IMAGE_WIDTH, IMAGE_HEIGHT);
+  const writer = new ImageDataIndexedPaletteWriter(imageData, palette);
+
+
+
+  const { bitsPerChannel } = palette;
+
+
+
+  let reader;
 
   if (encodingMethod === 1) {
-    for (let y = 0; y < IMAGE_HEIGHT; y++) {
-      for (let c = 0; c < IMAGE_WIDTH / 16; c++) {
-        const indexes = decodeWordsToPaletteIndexes(bitplaneView, srcPosition, 4, imageDataView.byteLength / 64);
-        for (let x = 0; x < indexes.length; x++) {
-          const color = getPaletteColorOffset((c * 16) + x, y, indexes[x]);
-          imageDataView.setUint32(destPosition, palette[color]);
-          destPosition += 4;
-        }
-        srcPosition += 2;
-      }
-    }
+    // contiguous bitplanes
+    reader = new ContiguousBitplaneReader(decompressedImageData, 4, IMAGE_WIDTH, IMAGE_HEIGHT);
   } else {
-    for (let c = 0; c < IMAGE_WIDTH / 8; c++) {
-      srcPosition = c * IMAGE_HEIGHT;
-      destPosition = c * 8 * 4;
-      for (let y = 0; y < IMAGE_HEIGHT; y++) {
-        const indexes = decodeBytesToPaletteIndexes(bitplaneView, srcPosition, 4, IMAGE_HEIGHT * 40);
-        for (let x = 0; x < 8; x++) {
-          const color = getPaletteColorOffset((c * 8) + x, y, indexes[x]);
-          imageDataView.setUint32(destPosition, palette[color]);
-          destPosition += 4;
-        }
-        destPosition += (IMAGE_WIDTH - 8) * 4;
-        srcPosition += 1;
-      }
-    }
+    // vertical bands of 8 bits
+    reader = new BitplaneReader(decompressedImageData, 1, IMAGE_HEIGHT, 40, 1, 4, IMAGE_HEIGHT * 40);
   }
 
+  for (let y = 0; y < IMAGE_HEIGHT; y++) {
+    for (let x = 0; x < IMAGE_WIDTH; x++) {
+      const color = reader.read();
+      const mappedColor = getPaletteColorOffset(x, y, color);
+      writer.write(mappedColor);
+    }
+  }
   return {
     palette: new IndexedPalette(bitsPerChannel === 4 ? 4096 : 512, { bitsPerChannel }),
     imageData

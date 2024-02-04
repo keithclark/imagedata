@@ -20,7 +20,7 @@ import {
  * @returns {Promise<DecodedImage>} Decoded image data
  * @throws {Error} If the image data is invalid
  */
-export const decode = async buffer => {
+export const decode = async (buffer) => {
   const bufferView = new DataView(buffer);
   if (buffer.byteLength === SPECTRUM_UNCOMPRESSED_FILE_SIZE) {
     return decodeUncompressed(buffer);

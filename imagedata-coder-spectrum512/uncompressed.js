@@ -1,12 +1,11 @@
 import ImageData from 'imagedata';
 
 import {
-  IndexedPalette,
-  decodeWordsToPaletteIndexes
+  ImageDataIndexedPaletteWriter,
+  IndexedPalette, WordInterleavedBitplaneReader, createAtariStIndexedPalette
 } from 'imagedata-coder-bitplane';
 
 import {
-  createPalette,
   getPaletteColorOffset
 } from './common.js';
 
@@ -14,6 +13,7 @@ import {
   ERROR_MESSAGE_INVALID_FILE_FORMAT,
   IMAGE_HEIGHT,
   IMAGE_WIDTH,
+  COLORS_PER_SCANLINE,
   SPECTRUM_UNCOMPRESSED_FILE_SIZE
 } from './consts.js';
 
@@ -30,30 +30,23 @@ import {
  * @returns {Promise<DecodedImage>} Decoded image data
  * @throws {Error} If the image data is invalid
  */
-export const decode = buffer => {
+export const decode = (buffer) => {
   const imageData = new ImageData(IMAGE_WIDTH, IMAGE_HEIGHT);
-  const imageDataView = new DataView(imageData.data.buffer);
-
-  let srcPosition = 160;
-  let destPosition = 0;
 
   if (buffer.byteLength !== SPECTRUM_UNCOMPRESSED_FILE_SIZE) {
     throw new Error(ERROR_MESSAGE_INVALID_FILE_FORMAT);
   }
 
-  const bitplaneView = new DataView(buffer, 0, 32000);
-  const paletteView = new DataView(buffer, 32000);
-  const { palette, bitsPerChannel } = createPalette(paletteView);
+  const palette = createAtariStIndexedPalette(new Uint8Array(buffer.slice(32000)), COLORS_PER_SCANLINE * IMAGE_HEIGHT);
+  const { bitsPerChannel } = palette;
+  const reader = new WordInterleavedBitplaneReader(new Uint8Array(buffer, 160, 32000 - 160), 4);
+  const writer = new ImageDataIndexedPaletteWriter(imageData, palette);
 
   for (let y = 0; y < IMAGE_HEIGHT; y++) {
-    for (let c = 0; c < IMAGE_WIDTH / 16; c++) {
-      const indexes = decodeWordsToPaletteIndexes(bitplaneView, srcPosition, 4, 1);
-      for (let x = 0; x < indexes.length; x++) {
-        const color = getPaletteColorOffset((c * 16) + x, y, indexes[x]);
-        imageDataView.setUint32(destPosition, palette[color]);
-        destPosition += 4;
-      }
-      srcPosition += 8;
+    for (let x = 0; x < IMAGE_WIDTH; x++) {
+      const color = reader.read();
+      const mappedColor = getPaletteColorOffset(x, y, color);
+      writer.write(mappedColor);
     }
   }
 

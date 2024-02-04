@@ -1,4 +1,4 @@
-export class IndexedPalette {
+export default class IndexedPalette {
 
   #colors;
   #bitsPerChannel;
@@ -86,14 +86,14 @@ export class IndexedPalette {
    */
   toValueArray(bitsPerChannel = 8, alpha = true) {
     if (alpha) {
-      return this.#colors.map(color => {
+      return this.#colors.map((color) => {
         return (color.r << (bitsPerChannel * 3)) + 
         (color.g << (bitsPerChannel * 2)) + 
         (color.b << (bitsPerChannel)) + 
         color.a >>> 0;
       });
     }
-    return this.#colors.map(color => {
+    return this.#colors.map((color) => {
       return (color.r << (bitsPerChannel * 2)) + 
       (color.g << (bitsPerChannel)) + 
       color.b >>> 0;
@@ -155,4 +155,14 @@ export class IndexedPalette {
     return palette;
   }
 
+  toJSON() {
+    return {
+      length: this.length,
+      bitsPerChannel: this.bitsPerChannel
+    };
+  }
+
+  [Symbol.iterator]() {
+    return this.#colors.values();
+  }
 }
