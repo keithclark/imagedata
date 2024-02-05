@@ -103,17 +103,17 @@ export default class BitplaneReader {
   /**
    * 
    * @param {Uint8Array} buffer - A Uint8Array containing the planar image data
-   * @param {number} bytesPerBlock - Number of concurrent bytes of bitplane data
-   * @param {number} blockStep - Number of bytes to step in order to reach next bitplane chunk 
-   * @param {number} blocksPerLine - Number of bytes used to store a single scanline for a bitplane
-   * @param {number} lineStep - Number of bytes to step in order to reach next scanline for a bitplane
-   * @param {number} planeStep
-   * @param {number} planes - Number of bitplanes in the image 
+   * @param {number} bytesPerBlock - Number of concurrent bytes of bitplane chunk data
+   * @param {number} blockStep - Number of bytes to step over in order to reach next block of bitplane data
+   * @param {number} blocksPerLine - Number of blocks used to store a single scanline for a bitplane
+   * @param {number} lineStep - Number of bytes to step over in order to reach the next scanline of a bitplane
+   * @param {number} planeStep - Number of bytes to step over in order to reach the next bitplane
+   * @param {number} planes - Total number of bitplanes in the image 
    * @example <caption>Atari ST word-interleaved</caption>
    * new BitplaneReader(buffer, 2, planes * 2, 2, planes * 4, planes, 2) 
    * @example <caption>Amiga ILBM (line-interleaved)</caption>
    * const bytesPerLine = (width >> 3);
-   * new BitplaneReader(buffer, bytesPerLine, 0, 1, bytesPerLine * (planes), planes, bytesPerLine);
+   * new BitplaneReader(buffer, bytesPerLine, 0, 1, bytesPerLine * planes, planes, bytesPerLine);
    * @example <caption>Amiga ACBM (contigous)</caption>
    * const bytesPerPlane = (width >> 3) * height;
    * new BitplaneReader(buffer, bytesPerPlane, 0, 1, 0, planes, bytesPerPlane);

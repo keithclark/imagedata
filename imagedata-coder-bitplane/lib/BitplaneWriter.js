@@ -108,13 +108,14 @@ export default class BitplaneWriter {
    * @param {number} planeStep
    * @param {number} planes - Number of bitplanes in the image 
    * @example <caption>Atari ST word-interleaved</caption>
-   * new BitplaneWriter(buffer, 2, planes * 2, 2, planes * 4, planes, 2) 
+   * new BitplaneWriter(buffer, 2, planes * 2, 2, planes * 4, planes, 2);
    * @example <caption>Amiga ILBM (line-interleaved)</caption>
    * const bytesPerLine = (width >> 3);
-   * new BitplaneWriter(buffer, bytesPerLine, 0, 1, bytesPerLine * (planes), planes, bytesPerLine);
+   * new BitplaneWriter(buffer, bytesPerLine, 0, 1, bytesPerLine * planes, planes, bytesPerLine);
    * @example <caption>Amiga ACBM (contigous)</caption>
    * const bytesPerPlane = (width >> 3) * height;
-   * new BitplaneWriter(buffer, bytesPerPlane, 0, 1, 0, planes, bytesPerPlane);  */
+   * new BitplaneWriter(buffer, bytesPerPlane, 0, 1, 0, planes, bytesPerPlane);
+   */
   constructor(buffer, bytesPerBlock, blockStep, blocksPerLine, lineStep, planes, planeStep) {
     this.#buffer = buffer;
     this.#planes = planes;

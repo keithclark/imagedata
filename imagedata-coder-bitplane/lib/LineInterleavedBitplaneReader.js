@@ -15,6 +15,6 @@ export default class LineInterleavedBitplaneReader extends BitplaneReader {
    */
   constructor(buffer, planes, width) {
     const bytesPerLine = (width >> 3);
-    super(buffer, bytesPerLine, 0, 1, bytesPerLine * (planes), planes, bytesPerLine);
+    super(buffer, bytesPerLine, 0, 1, bytesPerLine * planes, planes, bytesPerLine);
   }
 }
