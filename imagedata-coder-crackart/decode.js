@@ -36,8 +36,8 @@ export const decode = async (buffer) => {
 
   if (res === 2) {
     palette = new IndexedPalette(2, { bitsPerChannel: 1 });
-    palette.setColor(0, 0, 0, 0);
-    palette.setColor(1, 1, 1, 1);
+    palette.setColor(0, 1, 1, 1);
+    palette.setColor(1, 0, 0, 0);
   } else {
     if (res === 0) {
       palette = createAtariStIndexedPalette(new Uint8Array(buffer, 4, 32), 16);
