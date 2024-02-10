@@ -1,7 +1,7 @@
 /**
- * A low-level interface for reading data at a bit level
+ * A low-level interface for reading data from an `ArrayBuffer` at a bit level
  */
-export default class BitDataView {
+export default class BitView {
 
   /**
    * @type {DataView}
@@ -39,4 +39,4 @@ export default class BitDataView {
     }
   }
 
-};
+}

@@ -32,7 +32,7 @@ export default class Path {
     let x2 = Number.MIN_VALUE;
     let y2 = Number.MIN_VALUE;
 
-    this.points.forEach(point => {
+    this.points.forEach((point) => {
       x1 = Math.min(point.x, x1);
       x2 = Math.max(point.x, x2);
       y1 = Math.min(point.y, y1);

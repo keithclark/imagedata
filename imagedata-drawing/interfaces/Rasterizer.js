@@ -101,7 +101,7 @@ export default class Rasterizer {
    * @param {Number} color - The color of the outline
    */
   drawStrokedPath(path, color = 0xffffffff) {
-    path.subPaths.forEach(subPath => {
+    path.subPaths.forEach((subPath) => {
       const { points } = subPath;
 
       // If there are less than two points we can't stroke this path
@@ -128,7 +128,7 @@ export default class Rasterizer {
    * @param {Number} color - The color of the fill
    */
   drawFilledPath(path, color = 0xffffffff) {
-    path.subPaths.forEach(subPath => {
+    path.subPaths.forEach((subPath) => {
       const { points } = subPath;
 
       // If there are less than three points we can't fill this path

@@ -19,6 +19,7 @@
       "ObjectPattern": {"multiline": true, "minProperties": 4, "consistent": true}
     }],
     "space-infix-ops": ["warn", { "int32Hint": false }],
-    "comma-spacing": ["warn", {"before": false, "after": true}]
+    "comma-spacing": ["warn", {"before": false, "after": true}],
+    "arrow-parens": ["error", "always"]
   }
 }

@@ -1,6 +1,10 @@
 import ImageData from 'imagedata';
-import { IndexedPalette, decodeWordsToPaletteIndexes } from 'imagedata-coder-bitplane';
-import { createPalette, getPaletteColorOffset } from './common.js';
+import {
+  ImageDataIndexedPaletteWriter,
+  IndexedPalette, ContiguousBitplaneReader, createAtariStIndexedPalette
+} from 'imagedata-coder-bitplane';
+
+import { getPaletteColorOffset } from './common.js';
 import {
   COLORS_PER_SCANLINE,
   ERROR_MESSAGE_INVALID_FILE_FORMAT,
@@ -15,19 +19,20 @@ import {
  * 
  * Each 16 colour palette consists of a header word followed by the colour data.
  * The header word is a 16 bit mask where a `1` indicates the colour exists in
- * the colour data and `0` indicates the colour isn't and should be treated as
+ * the colour data and `0` indicates the colour doesn't and should be treated as
  * black. 
  * 
  * @param {ArrayBuffer} buffer - The `ArrayBuffer` containing the compressed data
- * @returns {ArrayBuffer} - A `ArrayBuffer` containing the uncompressed data
+ * @returns {Uint8Array} - A `Uint8Array` containing the uncompressed palette data
  */
-export const decompressPalette = (buffer) => {
-  const palette = new ArrayBuffer(COLORS_PER_SCANLINE * IMAGE_HEIGHT * 2);
-  const paletteView = new DataView(palette);
-  const srcView = new DataView(buffer);
+export const decompressPalette = (buffer, byteOffset, byteLength) => {
+  const palette = new Uint8Array(COLORS_PER_SCANLINE * IMAGE_HEIGHT * 2);
+  const paletteView = new DataView(palette.buffer);
+  const srcView = new DataView(buffer, byteOffset, byteLength);
+
   let outPos = 0;
   let srcPos = 0;
-  while (srcPos < buffer.byteLength) {
+  while (srcPos < srcView.byteLength) {
     let paletteMask = srcView.getUint16(srcPos);
     srcPos += 2;
     for (let c = 0; c < 16; c++) {
@@ -51,12 +56,13 @@ export const decompressPalette = (buffer) => {
 * Decompresses SPC run-length encoded bitmap data.
 * 
 * @param {ArrayBuffer} buffer - The `ArrayBuffer` containing the compressed data
-* @returns {ArrayBuffer} - A `ArrayBuffer` containing the uncompressed data
+* @param {number} byteOffset - Offset into the buffer to the first image byte
+* @param {number} byteLength - Length of the image to decompress
+* @returns {Uint8Array} - A `ArrayBuffer` containing the uncompressed data
 */
-export const decompressImage = (buffer) => {
-  const srcView = new DataView(buffer);
-  const outBuffer = new ArrayBuffer(IMAGE_HEIGHT * 160);
-  const outView = new DataView(outBuffer);
+export const decompressImage = (buffer, byteOffset, byteLength) => {
+  const srcView = new DataView(buffer, byteOffset, byteLength);
+  const outBuffer = new Uint8Array(IMAGE_HEIGHT * 160);
   const srcLength = srcView.byteLength - 1;
 
   let outPos = 0;
@@ -67,11 +73,11 @@ export const decompressImage = (buffer) => {
     if (header < 0) {
       const data = srcView.getUint8(srcPos++);
       for (let i = -header + 2; i > 0; i--) {
-        outView.setUint8(outPos++, data);
+        outBuffer[outPos++] = data;
       }
     } else {
       for (let i = header + 1; i > 0; i--) {
-        outView.setUint8(outPos++, srcView.getUint8(srcPos++));
+        outBuffer[outPos++] = srcView.getUint8(srcPos++);
       }
     }
   }
@@ -88,13 +94,9 @@ export const decompressImage = (buffer) => {
  * @returns {Promise<DecodedImage>} Decoded image data
  * @throws {Error} If the image data is invalid
  */
-export const decode = buffer => {
-  const imageData = new ImageData(IMAGE_WIDTH, IMAGE_HEIGHT);
-  const imageDataView = new DataView(imageData.data.buffer);
-  const bufferView = new DataView(buffer);
+export const decode = (buffer) => {
 
-  let srcPosition = 0;
-  let destPosition = 0;
+  const bufferView = new DataView(buffer);
 
   // Check the file header is valid
   if (bufferView.getUint32(0) !== SPECTRUM_FILE_HEADER) {
@@ -103,27 +105,28 @@ export const decode = buffer => {
 
   const bitmapLength = bufferView.getUint32(4);
   const paletteLength = bufferView.getUint32(8);
-  const decompressedImageData = decompressImage(buffer.slice(12, 12 + bitmapLength));
-  const decompressedPaletteData = decompressPalette(buffer.slice(12 + bitmapLength, 12 + bitmapLength + paletteLength));
-  const bitplaneView = new DataView(decompressedImageData);
-  const paletteView = new DataView(decompressedPaletteData);
-  const { palette, bitsPerChannel } = createPalette(paletteView);
+  const decompressedImageData = decompressImage(buffer, 12, bitmapLength);
+  const decompressedPaletteData = decompressPalette(buffer, 12 + bitmapLength, paletteLength);
+  const palette = createAtariStIndexedPalette(decompressedPaletteData, COLORS_PER_SCANLINE * IMAGE_HEIGHT);
+  const imageData = new ImageData(IMAGE_WIDTH, IMAGE_HEIGHT);
+  const reader = new ContiguousBitplaneReader(decompressedImageData, 4, IMAGE_WIDTH, IMAGE_HEIGHT);
+  const writer = new ImageDataIndexedPaletteWriter(imageData, palette);
 
-  // Spectrum images are 199 (not 200) pixels high.
-  for (let line = 0; line < IMAGE_HEIGHT; line++) {
-    for (let c = 0; c < IMAGE_WIDTH / 16; c++) {
-      const indexes = decodeWordsToPaletteIndexes(bitplaneView, srcPosition, 4, imageDataView.byteLength / 64);
-      for (let x = 0; x < indexes.length; x++) {
-        const color = getPaletteColorOffset((c * 16) + x, line, indexes[x]);
-        imageDataView.setUint32(destPosition, palette[color]);
-        destPosition += 4;
-      }
-      srcPosition += 2;
+  for (let y = 0; y < IMAGE_HEIGHT; y++) {
+    for (let x = 0; x < IMAGE_WIDTH; x++) {
+      const color = reader.read();
+      const mappedColor = getPaletteColorOffset(x, y, color);
+      writer.write(mappedColor);
     }
   }
 
+  const { bitsPerChannel } = palette;
+
   return {
-    palette: new IndexedPalette(bitsPerChannel === 4 ? 4096 : 512, { bitsPerChannel }),
+    meta: {
+      palette: new IndexedPalette(bitsPerChannel === 4 ? 4096 : 512, { bitsPerChannel }),
+      compression: true
+    },
     imageData
   };
 };

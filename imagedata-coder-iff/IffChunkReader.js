@@ -40,7 +40,7 @@ export class IffChunkReader {
 
    * @returns {number} 8 bit value
    */
-  readByte() {
+  readUint8() {
     return this.#view.getUint8(this.#pos++);
   }
 
@@ -49,7 +49,7 @@ export class IffChunkReader {
    * 
    * @returns {number} 16 bit value
    */
-  readWord() {
+  readUint16() {
     const value = this.#view.getUint16(this.#pos);
     this.#pos += 2;
     return value;
@@ -60,7 +60,7 @@ export class IffChunkReader {
    * 
    * @returns {number} 32 bit value
    */
-  readLong() {
+  readUint32() {
     const value = this.#view.getUint32(this.#pos);
     this.#pos += 4;
     return value;
@@ -95,7 +95,7 @@ export class IffChunkReader {
    */
   readChunk() {
     const id = this.readString(4);
-    const length = this.readLong();
+    const length = this.readUint32();
     const dataStart = this.#view.byteOffset + this.#pos;
     const reader = new IffChunkReader(this.#view.buffer, dataStart, length);
     this.#pos += length;
@@ -103,7 +103,12 @@ export class IffChunkReader {
     // IFF chunks are word aligned so, if the current offset is even, move over
     // the padding byte.
     if (this.#pos % 2 === 1 && !this.eof()) {
-      this.#pos++;
+      // Some IFF writers don't honor the word aligment and forego the padding
+      // byte. For compatability reasons we check that the next byte is a `0` 
+      // before advancing the pointer.
+      if (this.#view.getUint8(this.#pos) === 0) {
+        this.#pos++;
+      }
     }
 
     return {

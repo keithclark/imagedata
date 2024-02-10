@@ -10,9 +10,9 @@
  */
 export const hslaToUint32 = (h, s, l, a) => {
   h *= 180 / Math.PI;
-  const k = n => (n + h / 30) % 12;
+  const k = (n) => (n + h / 30) % 12;
   const z = s * Math.min(l, 1 - l);
-  const f = n => l - z * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const f = (n) => l - z * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
   return rgbaToUint32(f(0) * 255, f(8) * 255, f(4) * 255, a * 255);
 };
 
@@ -59,7 +59,6 @@ export const mix = (colorA, colorB) => {
   const mr = nr * na * (1 - oa) + or * oa;
   const mg = ng * na * (1 - oa) + og * oa; 
   const mb = nb * na * (1 - oa) + ob * oa;
-  const ma = na * 0xff;
-
+  const ma = (1 - (1 - na) * (1 - oa)) * 0xff;
   return rgbaToUint32(mr, mg, mb, ma);
 };
