@@ -25,6 +25,15 @@ export default class ImageDataIndexedPaletteReader {
     return index;
   }
 
+  /**
+   * Moves the reader forward by a specified number of pixels. Useful for 
+   * clipping data.
+   * @param {number} pixels The number of pixels to skip over
+   */
+  advance(pixels) {
+    this.#pos += 4 * pixels;
+  }
+
   setPalette(palette) {
     this.#palette = palette.resample(8).toValueArray();
   }

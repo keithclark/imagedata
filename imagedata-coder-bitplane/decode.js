@@ -22,11 +22,6 @@ export const decode = (buffer, imageData, palette, options = {}) => new Promise(
 
   let planes;
 
-  // Ensure the image width is a multiple of 16 pixels  
-  if (imageData.width % 16 !== 0) {
-    throw new Error('ImageData width must be multiple of 16');
-  }
-
   if ('planes' in options) {
     planes = options.planes;
   } else {
@@ -45,22 +40,27 @@ export const decode = (buffer, imageData, palette, options = {}) => new Promise(
   const { format = ENCODING_FORMAT_WORD } = options;
   const writer = new ImageDataIndexedPaletteWriter(imageData, palette);
 
+  // Regardless of the output width, bitplanes are always stored in multiples of 
+  // 16 bits. We need to calculate the width of the stored line for our reader
+  // instance.
+  const planeWidth = Math.ceil(width / 16) * 16;
+
   if (format === ENCODING_FORMAT_CONTIGUOUS) { 
-    reader = new ContiguousBitplaneReader(buffer, planes, width, height);
+    reader = new ContiguousBitplaneReader(buffer, planes, planeWidth, height);
   } else if (format === ENCODING_FORMAT_LINE) { 
-    reader = new LineInterleavedBitplaneReader(buffer, planes, width);
+    reader = new LineInterleavedBitplaneReader(buffer, planes, planeWidth);
   } else if (format === ENCODING_FORMAT_WORD) { 
     reader = new WordInterleavedBitplaneReader(buffer, planes);
   } else {
     throw new Error('Invalid format');
   }
 
-  // Be tollerant of oversized buffers and only read the number of pixels 
-  // required to fill the destination image data.
-  let bytesToRead = width * height;
-  while (bytesToRead) {
-    writer.write(reader.read());
-    bytesToRead--;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      writer.write(reader.read());
+    }
+    // Skip over any unused pixels
+    reader.advance(planeWidth - width);
   }
 
   resolve(imageData);

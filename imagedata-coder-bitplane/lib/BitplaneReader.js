@@ -65,7 +65,6 @@ Plane        | 1  | 1  |
              |------------------------------------ line 0 -----------------------------------|------------------------------------ line 1 -----------------------------------|
 
 */
-
 /**
  * Provides an interface for reading pixel data from a planar image that is
  * encoded as a series bitplanes. The reader will walk the bitmap data, using
@@ -130,7 +129,7 @@ export default class BitplaneReader {
   
 
   /**
-   * Reads the next pixel and returns its color palette index.
+   * Reads the color palette index of the next pixel in the image.
    * 
    * @throws {RangeError} If the reader exceeds the bounds of the buffer
    * @returns {number} The palette index of the next pixel in the image
@@ -153,7 +152,25 @@ export default class BitplaneReader {
     }
 
     const color = this.#colors[this.#bit];
+    this.#next();
+    return color;
+  }
 
+  /**
+   * Moves the reader forward by a specified number of pixels. Useful for 
+   * clipping data.
+   * @param {number} pixels The number of pixels to skip over
+   */
+  advance(pixels) {
+    for (let c = pixels; c > 0; c--) {
+      this.#next();
+    }
+  }
+
+  /**
+   * Advances the reader position by one pixel.
+   */
+  #next() {
     if (this.#bit < 7) {
       this.#bit++;
     } else {
@@ -170,9 +187,5 @@ export default class BitplaneReader {
         }
       }
     }
-
-    return color;
-
   }
-
 }
