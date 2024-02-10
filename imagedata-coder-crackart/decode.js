@@ -4,9 +4,16 @@ import { decompress } from './compression.js';
 import { ERROR_MESSAGE_INVALID_FILE_FORMAT, FILE_HEADER } from './consts.js';
 
 /**
- * @typedef {import('./types.js').DecodedImage} DecodedImage
+ * @typedef CrackArtImageMetadata
+ * @property {IndexedPalette} palette The color palette for the image
+ * @property {boolean} compressed Is the image data compressed
  */
 
+/**
+ * @typedef CrackArtImage
+ * @property {ImageData} imageData - The decoded image data
+ * @property {CrackArtImageMetadata} meta - The image metadata
+ */
 
 /**
  * Decodes a Crack Art image and returns a ImageData object containing the
@@ -14,7 +21,7 @@ import { ERROR_MESSAGE_INVALID_FILE_FORMAT, FILE_HEADER } from './consts.js';
  * Supports CA1, CA2 and CA3 formats.
  *
  * @param {ArrayBuffer} buffer - An array buffer containing the Crack Art image
- * @returns {Promise<DecodedImage>} Decoded image data
+ * @returns {Promise<CrackArtImage>} Decoded image data
  * @throws {Error} If the image data is invalid
  */
 export const decode = async (buffer) => {
@@ -59,8 +66,11 @@ export const decode = async (buffer) => {
   await decodeBitplanes(new Uint8Array(bitplaneData), imageData, palette, { format: ENCODING_FORMAT_WORD });
 
   return {
-    palette,
-    imageData
+    imageData,
+    meta: {
+      palette,
+      compressed: !!compressed
+    }
   };
 
 };

@@ -51,7 +51,10 @@ export const decode = (buffer) => {
   }
 
   return {
-    palette: new IndexedPalette(bitsPerChannel === 4 ? 4096 : 512, { bitsPerChannel }),
+    meta: {
+      palette: new IndexedPalette(bitsPerChannel === 4 ? 4096 : 512, { bitsPerChannel }),
+      compression: false
+    },
     imageData
   };
 };

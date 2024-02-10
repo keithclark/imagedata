@@ -12,12 +12,25 @@ import {
  */
 
 /**
+ * @typedef Spectrum512ImageMetadata
+ * @property {IndexedPalette} palette The color palette for the image
+ * @property {boolean} compressed Is the image data compressed
+ */
+
+/**
+ * @typedef Spectrum512Image
+ * @property {ImageData} imageData - The ImageData object containing the image
+ * @property {Spectrum512ImageMetadata} meta - The indexed palette containing the image colors
+ */
+
+
+/**
  * Decodes a Spectrum 512 image and returns a ImageData object containing the 
  * converted data. Colors are converted from 12bit RGB to 32bit RGBA format.
  * Supports SPU, SPC and SPS variants of the format.
  * 
  * @param {ArrayBuffer} buffer - An array buffer containing the image
- * @returns {Promise<DecodedImage>} Decoded image data
+ * @returns {Promise<Spectrum512Image>} Decoded image data
  * @throws {Error} If the image data is invalid
  */
 export const decode = async (buffer) => {

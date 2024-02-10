@@ -8,6 +8,18 @@ import ImageData from 'imagedata';
  */
 
 /**
+ * @typedef DegasImageMetadata
+ * @property {IndexedPalette} palette The color palette for the image
+ * @property {boolean} compressed Is the image data compressed
+ */
+
+/**
+ * @typedef DegasImage
+ * @property {ImageData} imageData - The decoded image data
+ * @property {DegasImageMetadata} meta - The image metadata
+ */
+
+/**
  * Decodes a Degas image and generates a ImageData object containing the
  * converted data, along with the original image palette.
  *
@@ -19,7 +31,7 @@ import ImageData from 'imagedata';
  * - 640 x 400 x 1
  *
  * @param {ArrayBuffer} buffer - An array buffer containing the image to decode
- * @returns {Promise<{palette: IndexedPalette,imageData: ImageData}>} Image data and palette for the image
+ * @returns {Promise<{imageData: ImageData, meta: DegasImageMetadata}>} Image data and palette for the image
  */
 
 export const decode = async (buffer) => {
@@ -46,6 +58,9 @@ export const decode = async (buffer) => {
   }
   return {
     imageData,
-    palette
+    meta: { 
+      palette,
+      compression: compressed
+    }
   };
 };
