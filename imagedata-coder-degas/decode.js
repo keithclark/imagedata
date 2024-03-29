@@ -1,6 +1,6 @@
 import { ENCODING_FORMAT_LINE, ENCODING_FORMAT_WORD, decode as decodeBitplanes } from 'imagedata-coder-bitplane';
 import { depack } from 'imagedata-coder-bitplane/compression/packbits.js';
-import { createAtariStIndexedPalette } from 'imagedata-coder-bitplane';
+import { createAtariStIndexedPalette, IndexedPalette } from 'imagedata-coder-bitplane';
 import ImageData from 'imagedata';
 
 /**
@@ -43,11 +43,17 @@ export const decode = async (buffer) => {
     throw new Error('Invalid file format');
   }
   
+  let palette;
+
   const width = res === 0 ? 320 : 640;
   const height = res === 2 ? 400 : 200;
   const planes = 4 >> res;
   const colors = 1 << planes;
-  const palette = createAtariStIndexedPalette(new Uint8Array(buffer, 2, colors * 2), colors);
+  if (planes === 1) {
+    palette = IndexedPalette.fromValueArray([0xffffffff, 0x000000ff]);
+  } else {
+    palette = createAtariStIndexedPalette(new Uint8Array(buffer, 2, colors * 2), colors);
+  }
   const imageData = new ImageData(width, height);
   if (compressed) {
     const bitplaneData = new Uint8Array(depack(buffer.slice(34), 32000));

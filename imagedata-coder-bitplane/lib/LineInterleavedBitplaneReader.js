@@ -14,7 +14,7 @@ export default class LineInterleavedBitplaneReader extends BitplaneReader {
    * @param {number} width - The width of the image in pixels
    */
   constructor(buffer, planes, width) {
-    const bytesPerLine = (width >> 3);
+    const bytesPerLine = width >> 3;
     super(buffer, bytesPerLine, 0, 1, bytesPerLine * planes, planes, bytesPerLine);
   }
 }
