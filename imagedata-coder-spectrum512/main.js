@@ -8,21 +8,8 @@ import {
 } from './consts.js';
 
 /**
- * @typedef {import('./types.js').DecodedImage} DecodedImage
+ * @typedef {import('./types.js').Spectrum512Image} Spectrum512Image
  */
-
-/**
- * @typedef Spectrum512ImageMetadata
- * @property {IndexedPalette} palette The color palette for the image
- * @property {boolean} compressed Is the image data compressed
- */
-
-/**
- * @typedef Spectrum512Image
- * @property {ImageData} imageData - The ImageData object containing the image
- * @property {Spectrum512ImageMetadata} meta - The indexed palette containing the image colors
- */
-
 
 /**
  * Decodes a Spectrum 512 image and returns a ImageData object containing the 
@@ -33,7 +20,7 @@ import {
  * @returns {Promise<Spectrum512Image>} Decoded image data
  * @throws {Error} If the image data is invalid
  */
-export const decode = async (buffer) => {
+export const decode = (buffer) => {
   const bufferView = new DataView(buffer);
   if (buffer.byteLength === SPECTRUM_UNCOMPRESSED_FILE_SIZE) {
     return decodeUncompressed(buffer);

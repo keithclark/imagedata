@@ -1,18 +1,26 @@
 import ImageData from 'imagedata';
 import {
   ImageDataIndexedPaletteWriter,
-  IndexedPalette, ContiguousBitplaneReader, createAtariStIndexedPalette
+  ContiguousBitplaneReader
 } from 'imagedata-coder-bitplane';
 
-import { getPaletteColorOffset } from './common.js';
+import { 
+  createPaletteArray,
+  getPaletteColorOffset
+} from './common.js';
+
 import {
   COLORS_PER_SCANLINE,
+  COMPRESSION_METHOD_COMPRESSED,
   ERROR_MESSAGE_INVALID_FILE_FORMAT,
   IMAGE_HEIGHT,
   IMAGE_WIDTH,
   SPECTRUM_FILE_HEADER
 } from './consts.js';
 
+/**
+ * @typedef {import('./types.js').Spectrum512Image} Spectrum512Image
+ */
 
 /**
  * Decompresses the palette.
@@ -23,11 +31,11 @@ import {
  * black. 
  * 
  * @param {ArrayBuffer} buffer - The `ArrayBuffer` containing the compressed data
- * @returns {Uint8Array} - A `Uint8Array` containing the uncompressed palette data
+ * @returns {ArrayBuffer} - A `ArrayBuffer` containing the uncompressed palette data
  */
 export const decompressPalette = (buffer, byteOffset, byteLength) => {
-  const palette = new Uint8Array(COLORS_PER_SCANLINE * IMAGE_HEIGHT * 2);
-  const paletteView = new DataView(palette.buffer);
+  const palette = new ArrayBuffer(COLORS_PER_SCANLINE * IMAGE_HEIGHT * 2);
+  const paletteView = new DataView(palette);
   const srcView = new DataView(buffer, byteOffset, byteLength);
 
   let outPos = 0;
@@ -91,7 +99,7 @@ export const decompressImage = (buffer, byteOffset, byteLength) => {
  * RGBA format.
  * 
  * @param {ArrayBuffer} buffer - An array buffer containing the image
- * @returns {Promise<DecodedImage>} Decoded image data
+ * @returns {Promise<Spectrum512Image>} Decoded image data
  * @throws {Error} If the image data is invalid
  */
 export const decode = (buffer) => {
@@ -107,25 +115,24 @@ export const decode = (buffer) => {
   const paletteLength = bufferView.getUint32(8);
   const decompressedImageData = decompressImage(buffer, 12, bitmapLength);
   const decompressedPaletteData = decompressPalette(buffer, 12 + bitmapLength, paletteLength);
-  const palette = createAtariStIndexedPalette(decompressedPaletteData, COLORS_PER_SCANLINE * IMAGE_HEIGHT);
+  const palettes = createPaletteArray(decompressedPaletteData);
   const imageData = new ImageData(IMAGE_WIDTH, IMAGE_HEIGHT);
   const reader = new ContiguousBitplaneReader(decompressedImageData, 4, IMAGE_WIDTH, IMAGE_HEIGHT);
-  const writer = new ImageDataIndexedPaletteWriter(imageData, palette);
+  const writer = new ImageDataIndexedPaletteWriter(imageData, palettes[0]);
 
   for (let y = 0; y < IMAGE_HEIGHT; y++) {
+    writer.setPalette(palettes[y]);
     for (let x = 0; x < IMAGE_WIDTH; x++) {
       const color = reader.read();
-      const mappedColor = getPaletteColorOffset(x, y, color);
+      const mappedColor = getPaletteColorOffset(x, 0, color);
       writer.write(mappedColor);
     }
   }
 
-  const { bitsPerChannel } = palette;
-
   return {
     meta: {
-      palette: new IndexedPalette(bitsPerChannel === 4 ? 4096 : 512, { bitsPerChannel }),
-      compression: true
+      palette: palettes,
+      compression: COMPRESSION_METHOD_COMPRESSED
     },
     imageData
   };

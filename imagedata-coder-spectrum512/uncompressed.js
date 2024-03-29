@@ -2,10 +2,11 @@ import ImageData from 'imagedata';
 
 import {
   ImageDataIndexedPaletteWriter,
-  IndexedPalette, WordInterleavedBitplaneReader, createAtariStIndexedPalette
+  WordInterleavedBitplaneReader
 } from 'imagedata-coder-bitplane';
 
 import {
+  createPaletteArray,
   getPaletteColorOffset
 } from './common.js';
 
@@ -13,21 +14,22 @@ import {
   ERROR_MESSAGE_INVALID_FILE_FORMAT,
   IMAGE_HEIGHT,
   IMAGE_WIDTH,
-  COLORS_PER_SCANLINE,
-  SPECTRUM_UNCOMPRESSED_FILE_SIZE
+  SPECTRUM_UNCOMPRESSED_FILE_SIZE,
+  COMPRESSION_METHOD_NONE
 } from './consts.js';
 
 /**
- * @typedef {import('./types.js').DecodedImage} DecodedImage
+ * @typedef {import('./types.js').Spectrum512Image} Spectrum512Image
  */
 
 
 /**
- * Decodes a Spectrum 512 image and returns a ImageData object containing the
- * converted data. Colors are converted from 12bit RGB to 32bit RGBA format
+ * Decodes an uncompressed Spectrum 512 image and returns a ImageData object
+ * containing the converted data. Colors are converted from 12bit RGB to 32bit
+ * RGBA format.
  *
- * @param {ArrayBuffer} buffer - An array buffer containing the NEOChrome image
- * @returns {Promise<DecodedImage>} Decoded image data
+ * @param {ArrayBuffer} buffer - An array buffer containing the uncompressed image
+ * @returns {Promise<Spectrum512Image>} A promise that resolves with the decoded image
  * @throws {Error} If the image data is invalid
  */
 export const decode = (buffer) => {
@@ -37,23 +39,23 @@ export const decode = (buffer) => {
     throw new Error(ERROR_MESSAGE_INVALID_FILE_FORMAT);
   }
 
-  const palette = createAtariStIndexedPalette(new Uint8Array(buffer.slice(32000)), COLORS_PER_SCANLINE * IMAGE_HEIGHT);
-  const { bitsPerChannel } = palette;
+  const palettes = createPaletteArray(buffer, 32000);
   const reader = new WordInterleavedBitplaneReader(new Uint8Array(buffer, 160, 32000 - 160), 4);
-  const writer = new ImageDataIndexedPaletteWriter(imageData, palette);
+  const writer = new ImageDataIndexedPaletteWriter(imageData, palettes[0]);
 
   for (let y = 0; y < IMAGE_HEIGHT; y++) {
+    writer.setPalette(palettes[y]);
     for (let x = 0; x < IMAGE_WIDTH; x++) {
       const color = reader.read();
-      const mappedColor = getPaletteColorOffset(x, y, color);
+      const mappedColor = getPaletteColorOffset(x, 0, color);
       writer.write(mappedColor);
     }
   }
 
   return {
     meta: {
-      palette: new IndexedPalette(bitsPerChannel === 4 ? 4096 : 512, { bitsPerChannel }),
-      compression: false
+      palette: palettes,
+      compression: COMPRESSION_METHOD_NONE
     },
     imageData
   };
