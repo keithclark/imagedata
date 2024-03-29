@@ -20,17 +20,28 @@ import {
   AMIGA_MODE_EHB,
   AMIGA_MODE_HAM,
   AMIGA_MODE_HIRES,
-  AMIGA_MODE_LACE
+  AMIGA_MODE_LACE,
+  IFF_CHUNK_ID_FORM,
+  IFF_CHUNK_ID_ILBM,
+  IFF_CHUNK_ID_ACBM,
+  IFF_CHUNK_ID_RAST,
+  IFF_CHUNK_ID_BMHD,
+  IFF_CHUNK_ID_CMAP,
+  IFF_CHUNK_ID_CAMG,
+  IFF_CHUNK_ID_ABIT,
+  IFF_CHUNK_ID_BODY,
+  IFF_CHUNK_ID_VDAT
 } from './consts.js';
 
 /**
  * @typedef IffImageMetadata
  * @property {IndexedPalette|IndexedPalette[]} palette The palette or raster palettes for the image
  * @property {IffImageEncodingType} encoding The encoding method used for storing bitplanes
- * @property {boolean} interlaced Indicates if this image requires the Amiga interlaced graphics mode
+ * @property {boolean} amigaLace Indicates if this image requires the Amiga interlaced graphics mode
  * @property {boolean} amigaEhb Indicates if this image requires the Amiga EHB (extra half-brite) graphics mode
  * @property {boolean} amigaHam Indicates if this image requires the Amiga HAM (hold-and-modify) graphics mode
  * @property {boolean} amigaHires Indicates if this image requires the Amiga high resolution graphics mode
+ * @property {number} planeCount Number of bitplanes used to store image palette indexes
  * @property {IffImageCompressionType} compression The compression method
  */
 
@@ -53,6 +64,7 @@ import {
  * converted data. Supports:
  * - ILBM and ACBM formats
  * - Amiga Extra Half Brite (EHB)
+ * - Amiga HAM6/8
  * - Compression (Uncompressed, Packbits and Atari ST vertical RLE)
  * 
  * @param {ArrayBuffer} buffer - An array buffer containing the IFF image
@@ -75,22 +87,28 @@ export const decode = async (buffer) => {
 
   // Check this is an IFF
   const formChunk = reader.readChunk();
-  if (formChunk.id !== 'FORM') {
+  if (formChunk.id !== IFF_CHUNK_ID_FORM) {
     error();
   }
 
   // Is this a bitmap image?
   const type = formChunk.reader.readString(4);
-  if (type !== 'ILBM' && type !== 'ACBM') {
+  if (type !== IFF_CHUNK_ID_ILBM && type !== IFF_CHUNK_ID_ACBM) {
     error();
   }
 
-  // NEOChrome master files store their `RAST` data outside the `FORM` chunk
-  // so we need to check for it here.
-  while (!reader.eof()) {
-    const { id, reader: rasterReader } = reader.readChunk();
-    if (id === 'RAST') {
-      rasters = extractRasterData(rasterReader);  
+  // Some NEOchrome Master IFF images store their `RAST` data outside the `FORM` 
+  // chunk so we need to check for that here. Since it's not uncommon for IFF 
+  // files to contain trailing garbage, it's not safe to assume that the next 
+  // blob of data is a valid IFF chunk, a new reader instance is used look ahead
+  // to determine if the next chunk is valid without advancing the main reader.
+  if (reader.position < reader.byteLength - 8) {
+    const lookAheadReader = new IffChunkReader(buffer, reader.position, 8);
+    const chunkId = lookAheadReader.readString(4);
+    const chunkSize = lookAheadReader.readUint32();
+    // A valid `RAST` chunk is exactly 6800 bytes. (34 bytes * 200 lines)
+    if (chunkId === IFF_CHUNK_ID_RAST && chunkSize === 6800) {
+      rasters = extractRasterData(reader.readChunk().reader);  
     }
   }
 
@@ -99,7 +117,7 @@ export const decode = async (buffer) => {
     const { id, reader, length } = formChunk.reader.readChunk();
 
     // Parse the bitmap header.
-    if (id === 'BMHD') {
+    if (id === IFF_CHUNK_ID_BMHD) {
       width = reader.readUint16();         // [+0x00] image width
       height = reader.readUint16();        // [+0x02] image height
       reader.readUint16();                 // [+0x04] x-origin
@@ -107,19 +125,18 @@ export const decode = async (buffer) => {
       planes = reader.readUint8();         // [+0x08] number of planes
       reader.readUint8();                  // [+0x09] mask  
       compression = reader.readUint8();    // [+0x0A] compression mode
-
       bytesPerLine = Math.ceil(width / 16) * 2;
     } 
 
     // The CAMG chunk. Contains Amiga mode meta data
     // - bit 7  -- EHB (Extra Half-Brite) mode
     // - bit 11 -- HAM Hold-And-Modify)
-    else if (id === 'CAMG') {
+    else if (id === IFF_CHUNK_ID_CAMG) {
       amigaMode = reader.readUint32();
     }
 
     // The colour map. Stores the indexed palette.
-    else if (id === 'CMAP') {
+    else if (id === IFF_CHUNK_ID_CMAP) {
       const size = length / 3;            // 3 bytes per colour entry
       palette = new IndexedPalette(size);
       for (let c = 0; c < size; c++) {
@@ -132,12 +149,12 @@ export const decode = async (buffer) => {
 
     // Some applications write the ST rasters into the `ILBM` so we need to 
     // check for that here.
-    else if (id === 'RAST') {
+    else if (id === IFF_CHUNK_ID_RAST) {
       rasters = extractRasterData(reader);
     }
 
     // ABIT - ACBM bitmap data
-    else if (id === 'ABIT') {
+    else if (id === IFF_CHUNK_ID_ABIT) {
       bitplaneData = reader.readBytes(length);
       bitplaneEncoding = ENCODING_FORMAT_CONTIGUOUS;
     }
@@ -148,7 +165,7 @@ export const decode = async (buffer) => {
     // Note: We don't convert the image to `ImageData` here because some IFF 
     // implementations don't follow the spec properly and write the BODY chunk 
     // before other data.
-    else if (id === 'BODY') {
+    else if (id === IFF_CHUNK_ID_BODY) {
       
       // No compression. Images are stored in line-interleaved format.
       if (compression === COMPRESSION_NONE) {
@@ -174,7 +191,7 @@ export const decode = async (buffer) => {
         // chunks is compressed and stored as a set of contiguous bitplanes
         while (!reader.eof()) {
           const { id, reader: chunkReader } = reader.readChunk();
-          if (id === 'VDAT') {
+          if (id === IFF_CHUNK_ID_VDAT) {
             const planeBuffer = depackVdatChunk(chunkReader, bytesPerLine, height);
             buffer.set(new Uint8Array(planeBuffer), offset);
             offset += bytesPerPlane;
@@ -206,19 +223,21 @@ export const decode = async (buffer) => {
   // palette.
   const imageData = new ImageData(width, height);
 
+  /** @type {IffImageMetadata} */
   const meta = {
     compression,
     encoding: bitplaneEncoding,
-    interlaced: !!(amigaMode & AMIGA_MODE_LACE),
+    amigaLace: !!(amigaMode & AMIGA_MODE_LACE),
     amigaEhb: !!(amigaMode & AMIGA_MODE_EHB),
     amigaHam: !!(amigaMode & AMIGA_MODE_HAM),
-    amigaHires: !!(amigaMode & AMIGA_MODE_HIRES)
+    amigaHires: !!(amigaMode & AMIGA_MODE_HIRES),
+    planeCount: planes
   };
 
   // This is an Amiga HAM image.
   if (amigaMode & AMIGA_MODE_HAM) {
     meta.palette = palette;
-    decodeHamImage(bitplaneData, imageData, palette);
+    decodeHamImage(bitplaneData, imageData, planes, palette);
   }
 
   // If the image uses `RAST` chunks then we need to process the image line by 
@@ -374,14 +393,17 @@ const extractRasterData = (reader) => {
  * @param {ImageData} imageData The image data to decode the image to
  * @param {IndexedPalette} palette The 16 color base palette
  */
-const decodeHamImage = (bitplaneData, imageData, palette) => {
+const decodeHamImage = (bitplaneData, imageData, planes, palette) => {
   const { width, height } = imageData;
-  const reader = new HamReader(new Uint8Array(bitplaneData), width, palette);
+  const reader = new HamReader(new Uint8Array(bitplaneData), planes, width, palette);
+  const planeWidth = Math.ceil(width / 16) * 16;
   const pixels = new DataView(imageData.data.buffer);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       pixels.setUint32((y * width + x) * 4, reader.read());
     }
+    // Consume any remaining pixels if the image width is not a multiple of 16
+    reader.advance(planeWidth - width);
   }
 };
 

@@ -18,3 +18,18 @@ export const AMIGA_MODE_HIRES = 0x8000;
 
 /** Image uses the Amiga interlaced display mode */
 export const AMIGA_MODE_LACE = 0x0004;
+
+export const IFF_CHUNK_ID_FORM = 'FORM';
+export const IFF_CHUNK_ID_ILBM = 'ILBM';
+export const IFF_CHUNK_ID_ACBM = 'ACBM';
+export const IFF_CHUNK_ID_RAST = 'RAST';
+export const IFF_CHUNK_ID_BMHD = 'BMHD';
+export const IFF_CHUNK_ID_CAMG = 'CAMG';
+export const IFF_CHUNK_ID_CMAP = 'CMAP';
+export const IFF_CHUNK_ID_ABIT = 'ABIT';
+export const IFF_CHUNK_ID_BODY = 'BODY';
+export const IFF_CHUNK_ID_VDAT = 'VDAT';
+
+
+export const IFF_ENCODING_FORMAT_ILBM = 'ilbm';
+export const IFF_ENCODING_FORMAT_ACBM = 'acbm';
