@@ -3,7 +3,6 @@ import ImageData from 'imagedata';
 import { 
   ENCODING_FORMAT_WORD,
   createAtariStIndexedPalette,
-  IndexedPalette,
   decode as decodeBitplanes
 } from 'imagedata-coder-bitplane';
 
