@@ -126,4 +126,12 @@ export class IffChunkReader {
   eof() {
     return this.#pos === this.#view.byteLength;
   }
+
+  get position() {
+    return this.#pos;
+  }
+
+  get byteLength() {
+    return this.#view.byteLength;
+  }
 }
