@@ -1,5 +1,5 @@
 {
-  "name": "imagedata",
+  "name": "@keithclark/imagedata",
   "version": "1.0.0",
   "description": "A JavaScript implementation of the W3C ImageData interface",
   "main": "index.js",
