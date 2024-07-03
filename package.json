@@ -2,8 +2,12 @@
   "name": "@keithclark/imagedata",
   "version": "1.0.0",
   "description": "A JavaScript implementation of the W3C ImageData interface",
-  "main": "index.js",
+  "main": "main.js",
   "author": "Keith Clark",
   "license": "MIT",
-  "type": "module"
+  "type": "module",
+  "exports": {
+    ".": "./main.js",
+    "./polyfill": "./polyfill.js"
+  }
 }
