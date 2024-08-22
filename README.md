@@ -2,9 +2,33 @@
 
 An implementation of the W3C ImageData interface for use in JavaScript environments that don't support it natively (everything other than a web browser). 
 
+## Usage
+
+You can use this in one of two ways, either as a module import or a polyfill. 
+
+To use the polyfill, simply import the polyfill path and the `ImageData` constructor will be added to `globalThis` if one isn't already defined. This method can be useful if you wish to write code that targets both a web browser and NodeJS.
+
+```js
+import '@keithclark/imagedata/polyfill';
+
+const imageData = new ImageData(320, 200);
+console.log(imageData.data);
+```
+
+If you prefer, you can import the `ImageData` class directly:
+
+```js
+import ImageData from '@keithclark/imagedata';
+
+const imageData = new ImageData(320, 200);
+console.log(imageData.data);
+```
+
+# `ImageData`
+
 ## Constructor
 
-Creates an ImageData object of a specific width and height filled with black pixels, or from an array of Uint8ClampedArray pixel data. 
+Creates an ImageData object of a specific width and height filled with black pixels, or from an array of `Uint8ClampedArray` pixel data. 
 
 #### Syntax
 
