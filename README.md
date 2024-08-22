@@ -1,38 +1,75 @@
-# `ImageData`
+# ImageData
 
-A collection of packages for working with images in JavaScript environments that don't implement the `ImageData` interface.
+An implementation of the W3C ImageData interface for use in JavaScript environments that don't support it natively (everything other than a web browser). 
 
-## Example
+## Usage
 
-Here we're loading a NEOchrome image and converting it to PNG.
+You can use this in one of two ways, either as a module import or a polyfill. 
+
+To use the polyfill, simply import the polyfill path and the `ImageData` constructor will be added to `globalThis` if one isn't already defined. This method can be useful if you wish to write code that targets both a web browser and NodeJS.
 
 ```js
-import imagedata from 'imagedata';
-import { decode } from 'imagedata-coder-neochrome';
-import { encode } from 'imagedata-coder-png';
-import { readFile, writeFile } from 'fs/promises';
+import '@keithclark/imagedata/polyfill';
 
-// Load a NEO image
-const srcImage = await readFile('my-image.neo');
-
-// Decode NEO file into ImageData and return its indexed palette
-const { imageData, palette } = await decode(srcImage.buffer);
-
-// Encode the ImageData to PNG format
-const outBuffer = await encode(imageData);
-
-// Save the file
-await writeFile(destFilepath, Buffer.from(outBuffer));
+const imageData = new ImageData(320, 200);
+console.log(imageData.data);
 ```
 
-## Packages
+If you prefer, you can import the `ImageData` class directly:
 
-* `imagedata` - Implementation of the [`ImageData` interface](https://html.spec.whatwg.org/multipage/canvas.html#dom-imagedata-dev)
-* `imagedata-coder-bitplane` - Convert from/to bitplane format
-* `imagedata-coder-crackart` - Decode Atari ST Crack Art images
-* `imagedata-coder-degas` - Encode / decode Atari ST [Degas](https://en.wikipedia.org/wiki/DEGAS_(software)) images
-* `imagedata-coder-iff` - Decode Amiga [IFF](https://en.wikipedia.org/wiki/Interchange_File_Format) images.
-* `imagedata-coder-neochrome` - Encode / decode Atari ST [NEOchrome](https://en.wikipedia.org/wiki/NEOchrome) images
-* `imagedata-coder-png` - Ecode / decode [PNG](https://en.wikipedia.org/wiki/Portable_Network_Graphics) images. Uses [pngjs](https://github.com/lukeapage/pngjs).
-* `imagedata-coder-spectrum512` - Decode Atari ST [Spectrum 512](http://www.atarimania.com/utility-atari-st-spectrum-512_22312.html) images
-* `imagedata-drawing` - Provides a context, similar to `CanvasRendingContext2D` for drawing graphics to `ImageData` objects
+```js
+import ImageData from '@keithclark/imagedata';
+
+const imageData = new ImageData(320, 200);
+console.log(imageData.data);
+```
+
+# `ImageData`
+
+## Constructor
+
+Creates an ImageData object of a specific width and height filled with black pixels, or from an array of `Uint8ClampedArray` pixel data. 
+
+#### Syntax
+
+```js
+myImageData = new ImageData(width, height)
+myImageData = new ImageData(data, width)
+myImageData = new ImageData(data, width, height)
+```
+
+#### Arguments
+
+Name | Type | Description
+-|-|-
+`data` | [Uint8ClampedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8ClampedArray) | Byte data representing the RGBA values of the image. Must be a multiple of 4. 
+`width` | [number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number) | The image width in pixels. 
+`height` | [number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number) | The image height in pixels. 
+
+## Properties
+
+### `colorSpace` (Read only)
+
+A [string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String) representing the color space of the image data. This property exists for compatability reasons and always returns `srgb`. 
+
+### `data` (Read only)
+
+A [Uint8ClampedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8ClampedArray). An array of color data representing the RGBA values of the image. 
+
+#### Example
+
+```js
+ const { data } = myImageData;
+ const r = data[0];
+ const g = data[1];
+ const b = data[2];
+ const a = data[3];
+```
+
+### `height` (Read only)
+
+A [number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number) representing the height of the image data in pixels. 
+
+### `width` (Read only)
+
+A [number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number) representing the width of the image data in pixels. 

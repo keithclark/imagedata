@@ -135,4 +135,13 @@ export default class ImageData {
     return 'ImageData';
   }
 
+  [Symbol.for('nodejs.util.inspect.custom')](depth, options, inspect) {
+    const inner = inspect({
+      width: this.width,
+      height: this.height,
+      data: this.data,
+      colorSpace: this.colorSpace
+    }, options);
+    return `${this.constructor.name} ${inner}`;
+  }
 }
